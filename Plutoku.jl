@@ -16,7 +16,7 @@ end
 # ╔═╡ 43ec2840-239d-11eb-075a-071ac0d6f4d4
 begin 
 	# @bind bindJSudoku SudokuInitial # et son javascript est inclus au dessus
-	# styleCSSpourSudokuCachéEnBasJusteAuDessusDuBonus! ## voir ici, tout en bas ↓
+	# stylélàbasavecbonus! ## voir ici, tout en bas ↓
 	
 	# const vivonsPlutoCaché = raw"""<link rel="stylesheet" href="./hide-ui.css">"""
 	# ↪ Permet de cacher l'interface de Pluto.jl
@@ -150,7 +150,7 @@ begin
 			return JSudokuFini
 		else
 			return HTML(raw"""<script id="scriptfini">
-		// styleCSSpourSudokuCachéEnBasJusteAuDessusDuBonus!
+		// stylélàbasavecbonus!
 				
 		const createSudokuHtml = (values, values_ini) => {	
 		  const data = [];
@@ -224,7 +224,7 @@ begin
 		end
 		JPropal = matriceàlisteJS(mPropal)
 		return HTML(raw"""<script id="scriptfini">
-		// styleCSSpourSudokuCachéEnBasJusteAuDessusDuBonus!
+		// stylélàbasavecbonus!
 		
 		// const kelcarJS = (lig, col) => [Math.floor(lig/3), Math.floor(col/3)];
 		const MMcar = (lig, col, lign, colo) => Math.floor(lig/3)==Math.floor(lign/3) && Math.floor(col/3)==Math.floor(colo/3) ;
@@ -670,7 +670,7 @@ md"# Résoudre un Sudoku par Alexis $cool" # v1.8.2 jeudi 27/05/2021 🤟
 #= Pour la vue HTML et le style CSS, cela est fortement inspiré de https://github.com/Pocket-titan/DarkMode et pour le sudoku https://observablehq.com/@filipermlh/ia-sudoku-ple1
 Pour basculer entre plusieurs champs automatiquement via JavaScript, merci à https://stackoverflow.com/a/15595732 , https://stackoverflow.com/a/44213036 et autres
 Et bien sûr le calepin d'exemple de @fonsp "3. Interactivity"
-Pour info, le code principal et styleCSSpourSudokuCachéEnBasJusteAuDessusDuBonus! :)
+Pour info, le code principal et stylélàbasavecbonus! :)
 
 Ce "plutoku" est visible sur https://github.com/4LD/plutoku
 
@@ -692,7 +692,7 @@ begin
 	viderOupas isa Missing ? viderSudoku = 2 : (viderSudoku = (viderOupas == "Vider le sudoku initial" ? 1 : 2))
 	SudokuInitial = HTML("""
 <script>
-// styleCSSpourSudokuCachéEnBasJusteAuDessusDuBonus!
+// stylélàbasavecbonus!
 
 const premier = JSON.stringify( $(SudokuMémo[1]) );
 const deuxième = JSON.stringify( $(SudokuMémo[2]) );
