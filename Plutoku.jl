@@ -15,12 +15,9 @@ end
 
 # ╔═╡ 43ec2840-239d-11eb-075a-071ac0d6f4d4
 begin 
-	# @bind bindJSudoku SudokuInitial # et son javascript est inclus au dessus
-	# stylélàbasavecbonus! ## voir ici, tout en bas ↓
+	# @bind bindJSudoku SudokuInitial # et son javascript est inclus au plus haut
+	# stylélàbasavecbonus! ## voir juste dans la cellule #Bonus au dessus ↑
 	
-	# const vivonsPlutoCaché = raw"""<link rel="stylesheet" href="./hide-ui.css">"""
-	# ↪ Permet de cacher l'interface de Pluto.jl
-	const vivonsPlutoCaché = "" ## Sinon """<!--commentaire HTML-->"""
 	const set19 = Set(1:9) # Pour ne pas le recalculer à chaque fois
 	const cool = html"<span id='BN' style='user-select: none;'>😎</span>";
 	jsvd() = fill(fill(0,9),9) # JSvide ou JCVD ^^ pseudo const
@@ -605,8 +602,9 @@ begin
 	window.location.href = "#ModifierInit";
 	</script><h6 style="margin-top: 0;"> Ci-dessous, le bouton ▶ restore le vieux sudoku en sudoku initial ! 🥳 <a id="$idLien" href='#ModifierInit'> retour en haut ↑ </a> </h6>""")
   end
-  vieux = vs! = vS! = vieuxSudoku! ## mini version
+  vieux = vs = vs! = vS! = vieuxSudoku! ## mini version
   vsd() = vieuxSudoku!(défaut=true) ## Pour revenir à l'original
+  ini = défaut = defaut = vsd ## mini version
 
   function sudokuAlt(nbChiffresMax=rand(26:81), moinsOK=true, nbessai=1) 
 	nbTours = 0 # cela compte les tours si choisi bien (avec un léger décalage)
@@ -662,7 +660,7 @@ begin
   end
   bt = testme = blindtest ## mini version
 ######################################################################################
-end; nothing;
+end; nothing; # Voilà ! fin de la plupart du code de ce programme Plutoku.jl
 
 # ╔═╡ 96d2d3e0-2133-11eb-3f8b-7350f4cda025
 md"# Résoudre un Sudoku par Alexis $cool" # v1.8.2 jeudi 27/05/2021 🤟
@@ -909,7 +907,7 @@ end
 # ╔═╡ 7cce8f50-2469-11eb-058a-099e8f6e3103
 vaetvient = HTML(raw"""
 <script>
-var vieillecopie = true;
+var vieillecopie = false;
 
 function déjàvu() { 
 	var père = document.getElementById("sudokincipit").parentElement;
@@ -918,7 +916,7 @@ function déjàvu() {
 	if (vieillecopie.isEqualNode(ancien)) {
 		ancien.innerHTML = fils.innerHTML;
 		ancien.removeChild(ancien.querySelector("tfoot"));
-		window.msga(ancien);
+		msga(ancien);
 	}
 	document.getElementById("sudokincipit").hidden = false;
 	père.removeChild(fils);
@@ -929,23 +927,24 @@ function làhaut() {
 	var père = document.getElementById("sudokincipit").parentElement;
 	var fils = document.getElementById("copiefinie");
 	var copie = document.getElementById("sudokufini");
-	vieillecopie = copie.cloneNode(true);
 	fils ? père.removeChild( fils ) : true;
 	document.getElementById("sudokincipit").hidden = true;
 	var tabl = document.createElement("table");
+	vieillecopie = (copie ? copie.cloneNode(true) : tabl);
 	tabl.id = "copiefinie";
-	tabl.innerHTML = (copie ? copie.innerHTML : `<thead><tr><th>C'est coché  <code>😉 Cachée</code>  sachez-le 😜</th></tr></thead>`) + `<tfoot id='tesfoot'><tr style="border-top: medium solid black !important;"><th colspan="9">↪ Cliquez ici pour revenir au sudoku modifiable</th></tr></tfoot>`;
+	tabl.innerHTML = (copie ? copie.innerHTML : `<thead id='taide'><tr><th>Aucune solution 😜 ou c'est coché  <code>😉 Cachée</code><br><br></th></tr></thead>`) + `<tfoot id='tesfoot'><tr id='lignenonvisible'><th colspan="9">↪ Cliquer ici pour revenir au sudoku modifiable</th></tr></tfoot>`;
 	père.appendChild(tabl);
+	document.getElementById("taide") ? document.getElementById("taide").addEventListener("click", déjàvu) : true;
 	document.getElementById("tesfoot").addEventListener("click", déjàvu);
-	window.msga(document.getElementById("copiefinie"));
-	document.getElementById("va_et_vient").innerHTML = `Solution ⤴ (au lieu du sudoku modifiable initial)`
+	copie ? msga(document.getElementById("copiefinie")) : true;
+	document.getElementById("va_et_vient").innerHTML = `Solution ↑ (au lieu du sudoku modifiable initial)`
 };
 document.getElementById("va_et_vient").addEventListener("click", làhaut);
 
-</script><span id="va_et_vient">"""); md"""## $vaetvient Sudoku initial ⤴ (modifiable) et sa solution : $(html"</span>") """
+</script><span id="va_et_vient">"""); bindJSudoku; md"""### $vaetvient Sudoku initial ⤴ (modifiable) et sa solution : $(html"</span>") """
 
 # ╔═╡ b2cd0310-2663-11eb-11d4-49c8ce689142
-bindJSudoku isa Missing ? résoutSudoku(SudokuMémo[3])[2] : (SudokuMémo[3] = bindJSudoku; #= Pour que le sudoku en cours (initial modifié) reste en mémoire si besoin -> Le sudoku initial ;) =# sudokuSolution = résoutSudoku(bindJSudoku); sudokuSolution[2]) # La petite explication seule
+bindJSudoku isa Missing ? sudokuSolution = résoutSudoku(SudokuMémo[3]) : (SudokuMémo[3] = bindJSudoku; #= Pour que le sudoku en cours (initial modifié) reste en mémoire si besoin -> Le sudoku initial ;) =# sudokuSolution = résoutSudoku(bindJSudoku)); sudokuSolution[2] # La petite explication seule
 
 # ╔═╡ bba0b550-2784-11eb-2f58-6bca9b1260d0
 md"""$(@bind voirOuPas puces(["😉 Cachée", "En touchant, entrevoir les chiffres...","Pour toutes les cases, voir les chiffres..."],"😉 Cachée"; idPuces="CacherRésultat") ) 
@@ -954,8 +953,8 @@ $(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
 $(@bind PropalOuSoluce puces(["...possibles par chiffre","...possibles par case","...de la solution"],"...possibles par chiffre"; idPuces="PossiblesEtSolution", classe="pasla" ) )"""
 
 # ╔═╡ 4c810c30-239f-11eb-09b6-cdc93fb56d2c
-if voirOuPas isa Missing || voirOuPas=="😉 Cachée"
-	md"""$(@isdefined(sudokuSolution) && typeof(sudokuSolution[1])==String ? html"<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5>"  : md"###### 🤐 Le sudoku est caché pour le moment comme demandé")
+if bindJSudoku isa Missing || voirOuPas isa Missing || voirOuPas=="😉 Cachée"
+	md"""$(typeof(sudokuSolution[1])==String ? html"<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5>"  : md"###### 🤐 Le sudoku est caché pour le moment comme demandé")
 Bonne chance ! Si besoin, cocher `😉 Cachée` pour revoir ce message .
 
 Pour information, `En touchant, entrevoir les chiffres...` permet en cliquant de faire apparaître (et disparaître via les chiffres bleus) le contenu choisi, comme un coup de pouce. De plus : 
@@ -1115,6 +1114,8 @@ table{
 }
 pluto-output table {
     border: medium hidden #000 !important;
+	margin-block-start: 0;
+	margin-block-end: 0;
 }
 pluto-output table.minitab {
 	border-spacing: 0 !important;
@@ -1163,7 +1164,7 @@ td input{
   border:0;
 	color:#aaa; /* noir */
 }
-td { min-width: 32px; }
+td { min-width: 38px; }
 
 pluto-output table tr td.blur{
 	color: transparent;
@@ -1257,6 +1258,9 @@ pluto-output.rich_output code {
     border: solid 1px #9b9f9f;
 	color: #9b9f9f;
 } 
+tr#lignenonvisible {
+	border-top: medium solid black !important;
+}
 </style>`;
 //////////////////////////////////////////////////////////////////////////////////////////
 const plutôtblanc = `<style id="cestblanc">
@@ -1271,6 +1275,8 @@ table{
 }
 pluto-output table {
     border: medium hidden #000 !important;
+	margin-block-start: 0;
+	margin-block-end: 0;
 }
 pluto-output table.minitab {
 	border-spacing: 0 !important;
@@ -1319,7 +1325,7 @@ td input{
   border:0;
 	// color:#aaa; /* noir */
 }
-td { min-width: 32px; }
+td { min-width: 38px; }
 
 pluto-output table tr td.blur{
 	color: transparent;
@@ -1413,6 +1419,9 @@ pluto-output.rich_output code {
     border: solid 1px #9b9f9f;
 	color: #9b9f9f;
 } */
+tr#lignenonvisible {
+	border-top: medium solid white !important;
+}
 </style>`;
 var plutôtstyle = html`<span id="stylebn">${plutôtnoir}</span>`;
 function noiroublanc() { 
@@ -1427,6 +1436,7 @@ function noiroublanc() {
 		BN.innerHTML = "😉";
 	};
 };
+// document.getElementById("BN").removeEventListener("click", noiroublanc);
 document.getElementById("BN") ? document.getElementById("BN").addEventListener("click", noiroublanc) : true;
 document.getElementById("Bonus").addEventListener("click", noiroublanc);
 return plutôtstyle;
@@ -1489,7 +1499,7 @@ function styléoupas() {
 };
 document.getElementById("plutot").addEventListener("click", styléoupas);
 return stylécaché;
-</script>"""); calepin = HTML(raw"<script>return html`<a href=${JSON.stringify(window.location.href).search('.html')>1 ? JSON.stringify(window.location.href).replace('html', 'jl') : JSON.stringify(window.location.href).replace('edit', 'notebookfile')} target='_blank' download>${document.title.replace('🎈 ','').replace('— Pluto.jl','')}</a>`;</script>"); pourgarder = HTML(raw"""<script>
+</script>"""); calepin = HTML(raw"<script>return html`<a href=${JSON.stringify(window.location.href).search('.html')>1 ? JSON.stringify(window.location.href).replace('html', 'jl') : JSON.stringify(window.location.href).replace('edit', 'notebookfile')} target='_blank' download>${document.title.replace('🎈 ','').replace('— Pluto.jl','')}</a>`;</script>"); pourgarderletemps = HTML(raw"""<script>
 	function générateurDeCodeClé() {
 	  var copyText = document.getElementById("pour-définir-le-sudoku-initial");
 	  var pastext = document.getElementById("sudokincipit");
@@ -1514,28 +1524,28 @@ return stylécaché;
 		});
 	};
 	return editCSS;
-	</script>"""); bonus = md"""#### $(html"<div id='Bonus' style='user-select: none; margin-top: 26px !important;'>Bonus : garder le sudoku en cours plus tard...</div>") 
+	</script>"""); bonusetastuces = md"""#### $(html"<div id='Bonus' style='user-select: none; margin-top: 17px !important;'>Bonus : le sudoku en cours plus tard...</div>") 
 Je conseille de garder le code du sudoku en cours (en cliquant, la copie est automatique ⚡). \
-$(html"<input type=button id='clégén' value='Copier le code à garder :)'><input id='pour-définir-le-sudoku-initial' type='text' style='font-size: x-small; margin-right: 2px;' />") **Note** : à coller dans un bloc-notes par exemple. 
+$(html"<input type=button id='clégén' value='Copier le code à garder :)'><input id='pour-définir-le-sudoku-initial' type='text' style='font-size: x-small; margin-right: 2px; max-width: 38px;' />") **Note** : à coller dans un bloc-notes par exemple. 
 
-##### ...et pour retrouver ce vieux sudoku : 
+##### ...à retrouver comme d'autres vieux sudoku : 
 
-Copier le code souhaité (d'un bloc-notes ou autre, cf. note ci-dessus). \
+Copier le code souhaité, et qui fut gardé (cf. note ci-dessus). \
 Ensuite, dans une (nouvelle) session, cliquer dans _`Enter cell code...`_ ci-dessous ↓ et coller le code. \
 Enfin, lancer le code avec le bouton ▶ tout à droite, qui clignote justement. \
-Ce vieux sudoku est restoré en place du sudoku initial ! (et automatiquement de [retour en haut ↑](#ModifierInit) ). 
+Ce vieux sudoku est restoré en place du sudoku initial ! (et de [retour en haut ↑](#ModifierInit) de la page). 
 	
 $(html"<details open><summary style='list-style: none;'><h6 id='BonusAstuces' style='display:inline-block;user-select: none;'> Autres petites astuces :</h6></summary><style>details[open] summary::after {content: ' (cliquer ici pour les cacher)';} summary:not(details[open] summary)::after {content: ' (cliquer ici pour les revoir)';}</style>")
    1. En réalité en dehors de cellule ou de case, le fait de coller (même en [haut](#BN) de la page) créée une cellule tout en bas (en plus) avec le code. Cela peut faire gagner un peu de temps, et permet de mettre plusieurs vieux sudokus (cependant, seul le dernier, où le bouton ▶ fut appuyé, est pris en compte). \
    2. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. $(html"<br>") En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. $(html"<br>") Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cette intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf.
    3. Il est aussi possible de bouger avec les flèches, aller à la ligne suivante automatiquement (à la _[Snake](https://www.google.com/search?q=Snake)_). Il y a aussi des raccourcis, comme `H` = haut, `V` ou `G` = gauche, `D` `J` `N` = droite, `B` = bas. Ni besoin de pavé numérique, ni d'appuyer sur _Majuscule_, les touches suivantes sont idendiques `1234 567 890` = `AZER TYU IOP` = `&é"' (-è _çà`. 
-   4. Il est possible de remonter la solution au lieu du sudoku modifiable en cliquant sur [Sudoku initial ⤴ (modifiable) et sa solution : ](#va_et_vient). On peut ensuite l'enlever en cliquant sur le texte qui sera sous la solution remontée.
-   5. Il est possible de voir ce programme en **Julia** ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))), d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci ✨'>") pour basculer l'interface de **Pluto.jl**, puis en cliquant sur l'œil 👁 à côté de chaque cellule. $(html"<br>") Il est aussi possible de télécharger ce calepin $calepin
-   6. Enfin, vous pouvez passer en style sombre ou lumineux en cliquant sur [**Bonus**](#Bonus) ou 😎/😉 [tout en haut](#BN) :)
+   4. Il est possible de **remonter la solution** au lieu du sudoku modifiable en cliquant sur [Sudoku initial ⤴ (modifiable) et sa solution : ](#va_et_vient). On peut ensuite l'enlever en cliquant sur le texte qui sera sous la solution remontée.
+   5. Il est possible de voir ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))), d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci ✨'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. $(html"<br>") Il est aussi possible de télécharger ce calepin $calepin
+   6. Enfin, vous pouvez passer en style **sombre ou lumineux** en cliquant sur [**Bonus**](#Bonus) ou 😎 [tout en haut](#BN) :)
 $(html"</details>")
 $pourvoirplutôt 
 $stylélàbasavecbonus
-$pourgarder
+$pourgarderletemps
 	"""
 
 # ╔═╡ 98f8cc2c-3a84-484a-b5cf-590b3f6a8fd0
