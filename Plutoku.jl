@@ -20,6 +20,7 @@ begin
 	
 	const set19 = Set(1:9) # Pour ne pas le recalculer à chaque fois
 	const cool = html"<span id='BN' style='user-select: none;'>😎</span>";
+	const coool = html"<span id='BoN' style='user-select: none;'>😎</span>"
 	jsvd() = fill(fill(0,9),9) # JSvide ou JCVD ^^ pseudo const
 	using Random: shuffle! # Astuce pour être encore plus rapide = Fast & Furious
 	## shuffle!(x) = x ## Si besoin, mais... Everyday I shuffling ! (dixit LMFAO)
@@ -42,10 +43,6 @@ begin
 	vues(mat::Array{Int,2},i::Int,j::Int)= (view(mat,i,:), view(mat,:,j), view(mat, carré(i,j)...)) # liste des chiffres possible par lignes, colonnes et carrés
 	listecarré(mat::Array{Int,2})= [view(mat,carré(i,j)...) for i in 1:3:9 for j in 1:3:9] # La liste de tous les carrés du sudoku
 	chiffrePossible(mat::Array{Int,2},i::Int,j::Int)= setdiff(set19,vues(mat,i,j)...) # Pour une case en i,j
-	function chiffrePropal(mat,i,j) # Pour mise en forme en HTML mat3 : 3x3
-		cp = chiffrePossible(mat,i,j)
-		return matriceàlisteJS(reshape([((x in cp) ? x : 0) for x in 1:9], (3,3)),3)
-	end
 
 	function vérifSudokuBon(mat::Array{Int,2})
 		lescarrés = listecarré(mat)
@@ -211,15 +208,57 @@ begin
 	end
 	htmls = htmlSudoku ## mini version
 	htmat = htmlSudoku ∘ matriceàlisteJS ## mini version
-	function htmlSudokuPropal(JSudokuini=jsvd(),JSudokuFini=nothing ; toutVoir=true, parCase=true)
-		mS::Array{Int,2} = listeJSàmatrice(JSudokuini)
-		mPropal = fill(fill( fill(0,3),3) , (9,9) )
-		for i in 1:9, j in 1:9
-			if mS[i,j] == 0
-				mPropal[i,j] = chiffrePropal(mS, i, j)
-			end
+	
+	function chiffrePropal(mat,i,j) # Pour mise en forme en HTML mat3 : 3x3
+		cp = chiffrePossible(mat,i,j)
+		return matriceàlisteJS(reshape([((x in cp) ? x : 0) for x in 1:9], (3,3)),3)
+	end
+	const pt1 = "·" # "."
+	const pt2 = "◌" # "○" # "◘" # "-" # ":"
+	const pt3 = "●" # "■" # "▬" # "—" # "⁖" # "⫶"
+	function nbPropal(mat,i,j) # Pour mise en forme en HTML mat3 : 3x3
+		lcp = length(chiffrePossible(mat,i,j))
+		if lcp == 0
+			return [["↘","↓","↙"],["→","0","←"],["↗","↑","↖"]], 0
+		else
+			return matriceàlisteJS(reshape([(x == lcp ? string(x) : (x<lcp ? (lcp<4 ? pt1 : (lcp<7 ? pt2 : pt3)) : " ")) for x in 1:9], (3,3)),3), lcp
 		end
-		JPropal = matriceàlisteJS(mPropal)
+	end
+	function htmlSudokuPropal(JSudokuini=jsvd(),JSudokuFini=nothing ; toutVoir=true, parCase=true, somme=false)
+		mS::Array{Int,2} = listeJSàmatrice(JSudokuini)
+		if somme	
+			mnPropal = fill(fill( fill("0",3),3) , (9,9) )
+			mine = 10
+			grisemine = [(0,0)]
+			for i in 1:9, j in 1:9
+				if mS[i,j] == 0
+				mnPropal[i,j], lcp = nbPropal(mS, i, j)
+					if lcp < mine
+						mine = lcp
+						grisemine = [(i,j)]
+					elseif lcp == mine
+						push!(grisemine, (i,j))
+					end
+				end
+			end
+			parCase = toutVoir
+			toutVoir = true
+			if 0 < mine < 9
+				for (i,j) in grisemine
+					mnPropal[i,j][3][3] = "✔"
+				end
+			end
+			JPropal = matriceàlisteJS(mnPropal)
+		else
+			mPropal = fill(fill( fill(0,3),3) , (9,9) )
+			for i in 1:9, j in 1:9
+				if mS[i,j] == 0
+					mPropal[i,j] = chiffrePropal(mS, i, j)
+				end
+			end
+			JPropal = matriceàlisteJS(mPropal)
+		end
+			
 		return HTML(raw"""<script id="scriptfini">
 		// stylélàbasavecbonus!
 		
@@ -660,10 +699,11 @@ begin
   end
   bt = testme = blindtest ## mini version
 ######################################################################################
-end; nothing; # Voilà ! fin de la plupart du code de ce programme Plutoku.jl
+end; nothing; # stylélàbasavecbonus! ## voir juste dans la cellule #Bonus au dessus ↑
+# Voilà ! fin de la plupart du code de ce programme Plutoku.jl
 
 # ╔═╡ 96d2d3e0-2133-11eb-3f8b-7350f4cda025
-md"# Résoudre un Sudoku par Alexis $cool" # v1.8.2 jeudi 27/05/2021 🤟
+md"# Résoudre un Sudoku par Alexis $cool" # v1.8.3 lundi 28/06/2021 🤟
 
 #= Pour la vue HTML et le style CSS, cela est fortement inspiré de https://github.com/Pocket-titan/DarkMode et pour le sudoku https://observablehq.com/@filipermlh/ia-sudoku-ple1
 Pour basculer entre plusieurs champs automatiquement via JavaScript, merci à https://stackoverflow.com/a/15595732 , https://stackoverflow.com/a/44213036 et autres
@@ -920,7 +960,7 @@ function déjàvu() {
 	}
 	document.getElementById("sudokincipit").hidden = false;
 	père.removeChild(fils);
-	document.getElementById("va_et_vient").innerHTML = `Sudoku initial ⤴ (modifiable) et sa solution :`
+	document.getElementById("va_et_vient").innerHTML = `Sudoku initial ⤴ (modifiable) et sa solution : `
 };
 
 function làhaut() { 
@@ -937,35 +977,38 @@ function làhaut() {
 	document.getElementById("taide") ? document.getElementById("taide").addEventListener("click", déjàvu) : true;
 	document.getElementById("tesfoot").addEventListener("click", déjàvu);
 	copie ? msga(document.getElementById("copiefinie")) : true;
-	document.getElementById("va_et_vient").innerHTML = `Solution ↑ (au lieu du sudoku modifiable initial)`
+	document.getElementById("va_et_vient").innerHTML = `Solution ↑ (au lieu du sudoku modifiable initial)`
 };
 document.getElementById("va_et_vient").addEventListener("click", làhaut);
 
-</script><span id="va_et_vient">"""); bindJSudoku; md"""### $vaetvient Sudoku initial ⤴ (modifiable) et sa solution : $(html"</span>") """
+</script><span id="va_et_vient">"""); bindJSudoku; md"""#### $vaetvient Sudoku initial ⤴ (modifiable) et sa solution : $(html"</span>") """
+
+# ╔═╡ bba0b550-2784-11eb-2f58-6bca9b1260d0
+md"""$(@bind voirOuPas puces(["😉 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"😉 Cachée"; idPuces="CacherRésultat") ) 
+$(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
+                                                
+$(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…par chiffre possible"; idPuces="PossiblesEtSolution", classe="pasla" ) )"""
 
 # ╔═╡ b2cd0310-2663-11eb-11d4-49c8ce689142
 bindJSudoku isa Missing ? sudokuSolution = résoutSudoku(SudokuMémo[3]) : (SudokuMémo[3] = bindJSudoku; #= Pour que le sudoku en cours (initial modifié) reste en mémoire si besoin -> Le sudoku initial ;) =# sudokuSolution = résoutSudoku(bindJSudoku)); sudokuSolution[2] # La petite explication seule
 
-# ╔═╡ bba0b550-2784-11eb-2f58-6bca9b1260d0
-md"""$(@bind voirOuPas puces(["😉 Cachée", "En touchant, entrevoir les chiffres...","Pour toutes les cases, voir les chiffres..."],"😉 Cachée"; idPuces="CacherRésultat") ) 
-$(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
-                                                
-$(@bind PropalOuSoluce puces(["...possibles par chiffre","...possibles par case","...de la solution"],"...possibles par chiffre"; idPuces="PossiblesEtSolution", classe="pasla" ) )"""
-
 # ╔═╡ 4c810c30-239f-11eb-09b6-cdc93fb56d2c
-if bindJSudoku isa Missing || voirOuPas isa Missing || voirOuPas=="😉 Cachée"
+if bindJSudoku isa Missing || voirOuPas isa Missing || voirOuPas=="😉 Cachée"
 	md"""$(typeof(sudokuSolution[1])==String ? html"<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5>"  : md"###### 🤐 Le sudoku est caché pour le moment comme demandé")
 Bonne chance ! Si besoin, cocher `😉 Cachée` pour revoir ce message .
 
-Pour information, `En touchant, entrevoir les chiffres...` permet en cliquant de faire apparaître (et disparaître via les chiffres bleus) le contenu choisi, comme un coup de pouce. De plus : 
+Pour information, `En touchant, entrevoir les nombres…` permet en cliquant de faire apparaître (et disparaître via les chiffres bleus) le contenu choisi, comme un coup de pouce. De plus : 
 
-En cliquant précisément dans une case (par exemple, au milieu c'est le chiffre 5), les `...possibles par chiffre` permettent de voir où chaque chiffre est possible dans dans les cases liées (sa ligne, sa colonne et son carré). Les `...possibles par case` permettent de voir l'ensemble des chiffres possibles (d'une ou) des cases cliquées. Seuls les chiffres `...de la solution` montrent (un ou) des chiffres du sudoku fini.
+   - En cliquant précisément dans une case, sur le 1 (en haut à gauche) au 9 (en bas à droite; le chiffre 5 est donc au milieu), les nombres `…par chiffre possible` permettent de voir si le chiffre est possible dans la case et ses cases liées (sur sa ligne, sa colonne et son carré).
+   - Chaque case à un seul nombre `…de possibilités (min ✔)` de 1 à 9 (de façon similaire, de haut en bas dans la case). Celles ayant le moins de possibilités ont ✔ en bas à droite (à la place du 9).
+   - Les nombres `…par case 🔢` permettent de voir la liste complète des chiffres possibles par case.
+   - Seuls les nombres `…de la solution 🚩` montrent (un ou) des chiffres du sudoku fini.
 
 Bien sûr, il y a pour chaque catégorie : 
-`Pour toutes les cases, voir les chiffres...` pour les plus grands tricheurs."""
-elseif PropalOuSoluce == "...de la solution" # || PropalOuSoluce isa Missing
-	htmlSudoku(sudokuSolution[1],bindJSudoku ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les chiffres...") )
-else htmlSudokuPropal(bindJSudoku,sudokuSolution[1] ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les chiffres..."), parCase= (PropalOuSoluce =="...possibles par case") )
+`Pour toutes les cases, voir les nombres…` pour tout voir."""
+elseif PropalOuSoluce == "…de la solution 🚩" # || PropalOuSoluce isa Missing
+	htmlSudoku(sudokuSolution[1],bindJSudoku ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les nombres…") )
+else htmlSudokuPropal(bindJSudoku,sudokuSolution[1] ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les nombres…"), parCase= (PropalOuSoluce =="…par case 🔢"), somme= (PropalOuSoluce=="…de possibilités (min ✔)"))
 end
 
 # ╔═╡ e986c400-60e6-11eb-1b57-97ba3089c8c1
@@ -1105,6 +1148,12 @@ const plutôtnoir = `<style>
 	}
 /*///////////  Pour le sudoku  //////////////*/
 
+#taide,
+#tesfoot,
+#va_et_vient {
+	user-select: none;
+}
+// #sudokufini {cursor: pointer;}
 select{
   padding:10px;
 }
@@ -1266,6 +1315,12 @@ tr#lignenonvisible {
 const plutôtblanc = `<style id="cestblanc">
 /*///////////  Pour le sudoku  //////////////*/
 
+#taide,
+#tesfoot,
+#va_et_vient {
+	user-select: none;
+}
+// #sudokufini {cursor: pointer;}
 select{
   padding:10px;
 }
@@ -1428,16 +1483,20 @@ function noiroublanc() {
 	var stylebn = document.getElementById("stylebn");
 	var cestblanc = document.getElementById("cestblanc");
 	var BN = document.getElementById("BN");
+	var BoN = document.getElementById("BoN");
 	if (cestblanc) { 
 		stylebn.innerHTML = plutôtnoir;
 		BN.innerHTML = "😎";
+		BoN.innerHTML = "😎";
 	} else {
 		stylebn.innerHTML = plutôtblanc;
 		BN.innerHTML = "😉";
+		BoN.innerHTML = "😉";
 	};
 };
 // document.getElementById("BN").removeEventListener("click", noiroublanc);
 document.getElementById("BN") ? document.getElementById("BN").addEventListener("click", noiroublanc) : true;
+document.getElementById("BoN") ? document.getElementById("BoN").addEventListener("click", noiroublanc) : true;
 document.getElementById("Bonus").addEventListener("click", noiroublanc);
 return plutôtstyle;
 </script>"""); pourvoirplutôt = HTML(raw"""<script>
@@ -1530,18 +1589,19 @@ $(html"<input type=button id='clégén' value='Copier le code à garder :)'><inp
 
 ##### ...à retrouver comme d'autres vieux sudoku : 
 
-Copier le code souhaité, et qui fut gardé (cf. note ci-dessus). \
-Ensuite, dans une (nouvelle) session, cliquer dans _`Enter cell code...`_ ci-dessous ↓ et coller le code. \
+Retrouver et copier le code qui fut gardé (cf. note ci-dessus). \
+Ensuite, dans une (nouvelle) session, cliquer dans _`Enter cell code...`_ tout en bas ↓ et coller le code. \
 Enfin, lancer le code avec le bouton ▶ tout à droite, qui clignote justement. \
 Ce vieux sudoku est restoré en place du sudoku initial ! (et de [retour en haut ↑](#ModifierInit) de la page). 
 	
 $(html"<details open><summary style='list-style: none;'><h6 id='BonusAstuces' style='display:inline-block;user-select: none;'> Autres petites astuces :</h6></summary><style>details[open] summary::after {content: ' (cliquer ici pour les cacher)';} summary:not(details[open] summary)::after {content: ' (cliquer ici pour les revoir)';}</style>")
-   1. En réalité en dehors de cellule ou de case, le fait de coller (même en [haut](#BN) de la page) créée une cellule tout en bas (en plus) avec le code. Cela peut faire gagner un peu de temps, et permet de mettre plusieurs vieux sudokus (cependant, seul le dernier, où le bouton ▶ fut appuyé, est pris en compte). \
-   2. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. $(html"<br>") En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. $(html"<br>") Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cette intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf.
-   3. Il est aussi possible de bouger avec les flèches, aller à la ligne suivante automatiquement (à la _[Snake](https://www.google.com/search?q=Snake)_). Il y a aussi des raccourcis, comme `H` = haut, `V` ou `G` = gauche, `D` `J` `N` = droite, `B` = bas. Ni besoin de pavé numérique, ni d'appuyer sur _Majuscule_, les touches suivantes sont idendiques `1234 567 890` = `AZER TYU IOP` = `&é"' (-è _çà`. 
-   4. Il est possible de **remonter la solution** au lieu du sudoku modifiable en cliquant sur [Sudoku initial ⤴ (modifiable) et sa solution : ](#va_et_vient). On peut ensuite l'enlever en cliquant sur le texte qui sera sous la solution remontée.
-   5. Il est possible de voir ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))), d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci ✨'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. $(html"<br>") Il est aussi possible de télécharger ce calepin $calepin
-   6. Enfin, vous pouvez passer en style **sombre ou lumineux** en cliquant sur [**Bonus**](#Bonus) ou 😎 [tout en haut](#BN) :)
+   1. Modifier le premier sudoku (à vider si besoin), cocher ce que l'on souhaite; le sudoku du dessous répond aux ordres. Cocher `😉 Cachée` pour revoir les indications sur l'emploi des cases à cocher.
+   2. En réalité en dehors de cellule ou de case, le fait de coller (même en [haut](#BN) de la page) crée une cellule tout en bas (en plus). Cela peut faire gagner un peu de temps. On peut mettre plusieurs vieux sudokus : cependant seul le dernier, où le bouton ▶ fut appuyé, est pris en compte. \
+   3. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. $(html"<br>") En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. $(html"<br>") Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cet intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf.
+   4. Il est possible de bouger avec les flèches, aller à la ligne suivante automatiquement (à la _[Snake](https://www.google.com/search?q=Snake)_). Il y a aussi des raccourcis, comme `H` = haut, `V` ou `G` = gauche, `D` `J` `N` = droite, `B` = bas. Ni besoin de pavé numérique, ni d'appuyer sur _Majuscule_, les touches suivantes sont idendiques `1234 567 890` = `AZER TYU IOP` = `&é"' (-è _çà`. 
+   5. Il est possible de **remonter la solution** au lieu du sudoku modifiable en cliquant sur l'entête [Sudoku initial ⤴ (modifiable) et sa solution](#va_et_vient). On peut ensuite l'enlever pour revenir au sudoku modifiable, ↪ en cliquant sur le texte sous la solution remontée.
+   6. Il est possible de voir ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))), d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci ✨'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. $(html"<br>") Il est aussi possible de télécharger ce calepin $calepin
+   7. Enfin, passer en style **sombre** ou **lumineux** en cliquant sur [**Bonus**](#Bonus) ou $coool [tout en haut](#BN) :)
 $(html"</details>")
 $pourvoirplutôt 
 $stylélàbasavecbonus
@@ -1557,8 +1617,8 @@ $pourgarderletemps
 # ╟─81bbbd00-2c37-11eb-38a2-09eb78490a16
 # ╟─a038b5b0-23a1-11eb-021d-ef7de773ef0e
 # ╟─7cce8f50-2469-11eb-058a-099e8f6e3103
-# ╟─b2cd0310-2663-11eb-11d4-49c8ce689142
 # ╟─bba0b550-2784-11eb-2f58-6bca9b1260d0
+# ╟─b2cd0310-2663-11eb-11d4-49c8ce689142
 # ╟─4c810c30-239f-11eb-09b6-cdc93fb56d2c
 # ╟─e986c400-60e6-11eb-1b57-97ba3089c8c1
 # ╠═98f8cc2c-3a84-484a-b5cf-590b3f6a8fd0
