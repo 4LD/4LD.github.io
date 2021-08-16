@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.8
+# v0.15.1
 
 using Markdown
 using InteractiveUtils
@@ -42,7 +42,8 @@ begin
 	carré(i::Int,j::Int)= 1+div(i-1,3)*3:3+div(i-1,3)*3, 1+div(j-1,3)*3:3+div(j-1,3)*3 # permet de fabriquer les filtres pour ne regarder qu'un seul carré
 	vues(mat::Array{Int,2},i::Int,j::Int)= (view(mat,i,:), view(mat,:,j), view(mat, carré(i,j)...)) # liste des chiffres possible par lignes, colonnes et carrés
 	listecarré(mat::Array{Int,2})= [view(mat,carré(i,j)...) for i in 1:3:9 for j in 1:3:9] # La liste de tous les carrés du sudoku
-	chiffrePossible(mat::Array{Int,2},i::Int,j::Int)= setdiff(set19,vues(mat,i,j)...) # Pour une case en i,j
+	chiffrePossible(mat::Array{Int,2},limp::Set{Int},i::Int,j::Int)= setdiff(set19,limp,vues(mat,i,j)...) # Pour une case en i,j
+	simplechiffrePossible(mat::Array{Int,2},i::Int,j::Int)= setdiff(set19,vues(mat,i,j)...) # Pour une case en i,j
 
 	function vérifSudokuBon(mat::Array{Int,2})
 		lescarrés = listecarré(mat)
@@ -78,48 +79,76 @@ begin
 	# 	end
 	# 	return nbZérosVus - 1 # pour ne pas s'autocompter
 	# end
-	function pasAssezDePropal!(listepossibles::Set{Int},dictCheckLi::Dict{Set{Int}, Int},dictCheckCj::Dict{Set{Int}, Int},dictCheckCarré::Dict{Set{Int}, Int})
+	function pasAssezDePropal!(i::Int,j::Int,Nimp::Matrix{Set{Int}}, listepossibles::Set{Int},dictCheckLi::Dict{Set{Int}, Tuple{Int,Set{Int}}},dictCheckCj::Dict{Set{Int}, Tuple{Int,Set{Int}}},dictCheckCarré::Dict{Set{Int}, Tuple{Int,Set{Tuple{Int,Int}}}})
 	# Ici l'idée est de voir s'il y a plus chiffres à mettre que de cases : en regardant tout ! entre deux cases, trois cases... sur la ligne, colonne, carré ^^
 	# Bref, s'il n'y a pas assez de propositions pour les chiffres à caser c'est vrai
 		dili = copy(dictCheckLi)
 		dico = copy(dictCheckCj)
 		dica = copy(dictCheckCarré)
 
-		for (k,v) in dili # Pour les lignes
+		for (k,(v,li)) in dili # Pour les lignes
 			kk = union(k,listepossibles)
 			if length(kk) > v
-				dictCheckLi[kk] = max(get(dictCheckLi, kk, 0) ,v+1) 
-				# dictCheckLi[kk] = v + 1 # ex: [1,2]=>1 et [2,3]=>1 = [1,2,3]=>2
+				gdc, gdd = get(dictCheckLi, kk, (0,Set{Int}()) )
+				vv = max(gdc, v+1) 
+				vvv = union(li, gdd, Set(j)) 
+				if length(kk) == vv
+					# Les chiffres kk sont à retirer de toute la ligne sauf aux kk 
+					for limp in setdiff(set19, vvv)
+						union!(Nimp[i,limp], kk)
+					end
+				end
+				dictCheckLi[kk] = (vv, vvv)
 			else 
 				return true
 			end
 		end	
-		for (k,v) in dico # Pour les colonnes
+		for (k,(v,co)) in dico # Pour les colonnes
 			kk = union(k,listepossibles)
 			if length(kk) > v
-				dictCheckCj[kk]= max(get(dictCheckCj, kk, 0) ,v+1) 
+				gdc, gdd = get(dictCheckCj, kk, (0,Set{Int}()) )
+				vv = max(gdc, v+1) 
+				vvv = union(co, gdd, Set(i)) 
+				if length(kk) == vv
+					# Les chiffres kk sont à retirer de toute la ligne sauf aux kk
+					for limp in setdiff(set19, vvv)
+						union!(Nimp[limp,j], kk)
+					end
+				end
+				dictCheckCj[kk] = vv, vvv
 			else 
 				return true
 			end
 		end	
-		for (k,v) in dica # Pour les carrés
+		for (k,(v,ca)) in dica # Pour les carrés
 			kk = union(k,listepossibles)
 			if length(kk) > v
-				dictCheckCarré[kk] = max(get(dictCheckCarré, kk, 0) ,v+1) 
+				gdc, gdd = get(dictCheckCarré, kk, (0,Set{Tuple{Int, Int}}()) )
+				vv = max(gdc, v+1) 
+				vvv = union(ca, gdd, Set([(i,j)]) ) 
+				if length(kk) == vv
+					# Les chiffres kk sont à retirer de toute la ligne sauf aux kk
+					incar,ré = carré(i,j)
+					setincarré = Set([(ii,jj) for ii in incar, jj in ré if (ii,jj) ∉ vvv]) # perf ?
+					for (limp,ljmp) in setincarré
+						union!(Nimp[limp,ljmp], kk)
+					end
+				end
+				dictCheckCarré[kk] = vv, vvv
 			else 
 				return true
 			end
 		end	
-		get!(dictCheckLi,listepossibles,1)
-		get!(dictCheckCj,listepossibles,1)
-		get!(dictCheckCarré,listepossibles,1)
+		get!(dictCheckLi,listepossibles,(1, Set( j )) )
+		get!(dictCheckCj,listepossibles,(1, Set( i )) )
+		get!(dictCheckCarré,listepossibles,(1, Set( [(i,j)] )) )
 		return false
 	end
 	function puces(liste, valdéfaut=nothing ; idPuces="p"*string(rand(Int)), classe="")
 		début = """<span id="$idPuces" """ *(classe=="" ? ">" : """class="$classe">""")
 		fin = """</span><script>const form = document.getElementById('$idPuces')
 	form.oninput = (e) => { form.value = e.target.value; """ *
-		(idPuces=="CacherRésultat" ? """if (e.target.value=='😉 Cachée') {
+		(idPuces=="CacherRésultat" ? """if (e.target.value=='🤫 Cachée') {
 		document.getElementById('PossiblesEtSolution').classList.add('pasla');
 		} else {
 		document.getElementById('PossiblesEtSolution').classList.remove('pasla');
@@ -141,7 +170,8 @@ begin
 
 	function htmlSudoku(JSudokuFini=jsvd(),JSudokuini=jsvd() ; toutVoir=true)
 		if isa(JSudokuFini, String)
-			return JSudokuFini
+			# return HTML("<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5><p style='text-align: center;'>$JSudokuFini</p>")
+			return HTML("<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5><table id='sudokufini' style='user-select: none;' <tbody><tr><td style='text-align: center;min-width: 340px;padding: 26px 0;'>$JSudokuFini</td></tr></tbody></table>")
 		else
 			return HTML(raw"""<script id="scriptfini">
 		// stylélàbasavecbonus!
@@ -209,15 +239,18 @@ begin
 	htmls = htmlSudoku ## mini version
 	htmat = htmlSudoku ∘ matriceàlisteJS ## mini version
 	
-	function chiffrePropal(mat,i,j) # Pour mise en forme en HTML mat3 : 3x3
-		cp = chiffrePossible(mat,i,j)
-		return matriceàlisteJS(reshape([((x in cp) ? x : 0) for x in 1:9], (3,3)),3)
+	function chiffrePropal(mat,limp,i,j) # Pour mise en forme en HTML mat3 : 3x3
+		cp = chiffrePossible(mat,limp,i,j)
+		if isempty(cp)
+			return [["◜","‽","◝"],["¡","/","!"],["◟","_","◞"]]
+		end
+		return matriceàlisteJS(reshape([((x in cp) ? string(x) : " ") for x in 1:9], (3,3)),3)
 	end
 	const pt1 = "·" # "."
 	const pt2 = "◌" # "○" # "◘" # "-" # ":"
 	const pt3 = "●" # "■" # "▬" # "—" # "⁖" # "⫶"
-	function nbPropal(mat,i,j) # Pour mise en forme en HTML mat3 : 3x3
-		lcp = length(chiffrePossible(mat,i,j))
+	function nbPropal(mat,limp,i,j) # Pour mise en forme en HTML mat3 : 3x3
+		lcp = length(chiffrePossible(mat,limp,i,j))
 		if lcp == 0
 			return [["↘","↓","↙"],["→","0","←"],["↗","↑","↖"]], 0
 		else
@@ -230,9 +263,24 @@ begin
 			mnPropal = fill(fill( fill("0",3),3) , (9,9) )
 			mine = 10
 			grisemine = [(0,0)]
+			mImp = [ Set{Int}() for _ = 1:9, _ = 1:9 ]
+			while true
+				nAwak = deepcopy(mImp)
+				vérifligne = [ Dict{Set{Int}, Tuple{Int,Set{Int}}}() for _ = 1:9 ]
+				vérifcol = [ Dict{Set{Int}, Tuple{Int,Set{Int}}}() for _ = 1:9 ]
+				vérifcarré = [ Dict{Set{Int}, Tuple{Int,Set{Tuple{Int,Int}}}}() for _ = 1:9 ]
+				for i in 1:9, j in 1:9
+					if mS[i,j] == 0
+						pasAssezDePropal!(i, j, mImp, chiffrePossible(mS,mImp[i,j],i,j), vérifligne[i], vérifcol[j], vérifcarré[kelcarré(i,j)]) 
+					end
+				end
+				if mImp == nAwak
+					break
+				end
+			end
 			for i in 1:9, j in 1:9
 				if mS[i,j] == 0
-				mnPropal[i,j], lcp = nbPropal(mS, i, j)
+				mnPropal[i,j], lcp = nbPropal(mS, mImp[i,j], i, j)
 					if lcp < mine
 						mine = lcp
 						grisemine = [(i,j)]
@@ -250,10 +298,25 @@ begin
 			end
 			JPropal = matriceàlisteJS(mnPropal)
 		else
-			mPropal = fill(fill( fill(0,3),3) , (9,9) )
+			mPropal = fill(fill( fill("0",3),3) , (9,9) )
+			mImp = [ Set{Int}() for _ = 1:9, _ = 1:9 ]
+			while true
+				nAwak = deepcopy(mImp)
+				vérifligne = [ Dict{Set{Int}, Tuple{Int,Set{Int}}}() for _ = 1:9 ]
+				vérifcol = [ Dict{Set{Int}, Tuple{Int,Set{Int}}}() for _ = 1:9 ]
+				vérifcarré = [ Dict{Set{Int}, Tuple{Int,Set{Tuple{Int,Int}}}}() for _ = 1:9 ]
+				for i in 1:9, j in 1:9
+					if mS[i,j] == 0
+						pasAssezDePropal!(i, j, mImp, chiffrePossible(mS,mImp[i,j],i,j), vérifligne[i], vérifcol[j], vérifcarré[kelcarré(i,j)]) 
+					end
+				end
+				if mImp == nAwak
+					break
+				end
+			end
 			for i in 1:9, j in 1:9
 				if mS[i,j] == 0
-					mPropal[i,j] = chiffrePropal(mS, i, j)
+					mPropal[i,j] = chiffrePropal(mS, mImp[i,j], i, j)
 				end
 			end
 			JPropal = matriceàlisteJS(mPropal)
@@ -406,20 +469,23 @@ begin
 	allerAuChoixSuivant = false
 	choixPrécédent = false
 	choixAfaire = false
+	listedancienImp = []
+	mImp = [ Set{Int}() for _ = 1:9, _ = 1:9 ]
+	çaNavancePas = true # Permet de voir si rien ne se remplit en un tour
 	if essai>1 || vérifSudokuBon(mS)
 		while length(lesZéros)>0 && nbToursTotal <= nbToursMax
-			çaNavancePas = true # Permet de voir si rien ne se remplit en un tour
-			minChoixdesZéros = 10
-			nbTours += 1
-			nbToursTotal += 1
-			lesClésZérosàSuppr=Int[]
-			vérifligne = [ Dict{Set{Int}, Int}() for _ = 1:9 ]
-			vérifcol = [ Dict{Set{Int}, Int}() for _ = 1:9 ]
-			vérifcarré = [ Dict{Set{Int}, Int}() for _ = 1:9 ]
 			if !allerAuChoixSuivant
+				çaNavancePas = true # Permet de voir si rien ne se remplit en un tour
+				minChoixdesZéros = 10
+				nbTours += 1
+				nbToursTotal += 1
+				lesClésZérosàSuppr=Int[]
+				vérifligne = [ Dict{Set{Int}, Tuple{Int,Set{Int}}}() for _ = 1:9 ]
+				vérifcol = [ Dict{Set{Int}, Tuple{Int,Set{Int}}}() for _ = 1:9 ]
+				vérifcarré = [ Dict{Set{Int}, Tuple{Int,Set{Tuple{Int,Int}}}}() for _ = 1:9 ]
 				for (key, (i,j)) in enumerate(lesZéros)
-					listechiffre = chiffrePossible(mS,i,j)
-					if isempty(listechiffre) || (essai>2 && pasAssezDePropal!(listechiffre, vérifligne[i], vérifcol[j], vérifcarré[kelcarré(i,j)]) ) # Plus de possibilité (ou pas assez)... pas bon signe ^^
+					listechiffre = chiffrePossible(mS,mImp[i,j],i,j)
+					if isempty(listechiffre) || (essai>2 && pasAssezDePropal!(i, j, mImp, listechiffre, vérifligne[i], vérifcol[j], vérifcarré[kelcarré(i,j)]) ) # Plus de possibilité (ou pas assez)... pas bon signe ^^
 						allerAuChoixSuivant = true # donc mauvais choix
 						break
 					elseif length(listechiffre) == 1 # L'idéal, une seule possibilité
@@ -434,9 +500,10 @@ begin
 				end
 			end
 			if çaNavancePas || allerAuChoixSuivant # Pour avancer autrement ^^
+			# mImp = [ Set{Int}() for _ = 1:9, _ = 1:9 ]
 				if allerAuChoixSuivant # Si le choix en cours n'est pas bon
 					if choixPrécédent==false || isempty(listedechoix)# pas de bol hein
-						return " ⚡ Sudoku impossible", md"""#### ⚡ Sudoku impossible à résoudre... et à me piéger aussi 😜
+						return " ⚡ Sudoku impossible", md"""##### ⚡ Sudoku impossible à résoudre... 😜
 							
 		Si ce n'est pas le cas, revérifier le Sudoku initial, car celui-ci n'a pas de solution possible.
 							
@@ -452,12 +519,13 @@ begin
 						choixPrécédent = (i,j, choix+1, l, lc)
 						listedechoix[nbChoixfait] = choixPrécédent
 						mS = copy(listedancienneMat[nbChoixfait])
+						mImp = deepcopy(listedancienImp[nbChoixfait])
 						nbTours = listeTours[nbChoixfait]
 						allerAuChoixSuivant = false
 						mS[i,j] = pop!(lc)
 						lesZéros = copy(listedesZéros[nbChoixfait])
 					elseif length(listedechoix) < 2 # pas 2 bol
-						return " ⚡ Sudoku impossible", md"""#### ⚡ Sudoku impossible à résoudre... et à me piéger aussi 😜
+						return " ⚡ Sudoku impossible", md"""##### ⚡ Sudoku impossible à résoudre... 😜
 							
 		Si ce n'est pas le cas, revérifier le Sudoku initial, car celui-ci n'a pas de solution possible.
 							
@@ -467,6 +535,7 @@ begin
 					else # Il faut revenir d'un cran dans la liste historique
 						deleteat!(listedechoix, nbChoixfait)
 						deleteat!(listedancienneMat, nbChoixfait)
+						deleteat!(listedancienImp, nbChoixfait)
 						deleteat!(listedesZéros, nbChoixfait)
 						deleteat!(listeTours, nbChoixfait)
 						nbChoixfait -= 1
@@ -480,6 +549,7 @@ begin
 					# nbHistoTot += 1 ## histoire 2
 					push!(listedechoix, choixAfaire) # ici pas besoin de copie
 					push!(listedancienneMat , copy(mS)) # copie en dur
+					push!(listedancienImp , deepcopy(mImp)) # copie en dur
 					filter!(!=(choixAfaire[1:2]), lesZéros) # On retire ce que l'on a choisi de faire
 					push!(listedesZéros , copy(lesZéros)) # copie en dur aussi
 					push!(listeTours, nbTours) # On garde tout en mémoire
@@ -488,16 +558,16 @@ begin
 					choixPrécédent = choixAfaire
 				end 
 			else # !çaNavancePas && !allerAuChoixSuivant ## Tout va bien ici
-				deleteat!(lesZéros, lesClésZérosàSuppr) # On retire ceux remplis
+				deleteat!(lesZéros, lesClésZérosàSuppr) # On retire ceux remplis 
 			end	
 		end
-		else return "🧐 Merci de corriger ce Sudoku ;)", md"""#### 🧐 Merci de revoir ce sudoku, il n'est pas conforme : 
+		else return "🧐 Merci de corriger ce Sudoku ;)", md"""##### 🧐 Merci de revoir ce sudoku, il n'est pas conforme : 
 			En effet, il doit y avoir au moins sur une ligne ou colonne ou carré, un chiffre en double; bref au mauvais endroit ! 😄""", 
 (tour=nbTours,tt=nbToursTotal,essai=essai,noix=nbChoixfait,tours=listeTours,choix=listedechoix, zéros=listedesZéros,maths=listedancienneMat) 
 # (tour=nbTours,tt=nbToursTotal,essai=essai,noix=nbChoixfait,tours=listeTours,choix=listedechoix, zéros=listedesZéros,maths=listedancienneMat ,histoix=listeHistoChoix,histrice=listeHistoMat, histour=listeHistoToursTotal,histo=nbHistoTot) ## retours d'histoires 3
 	end
 	if essai > nbEssaisMax
-		return "🤓 Merci de mettre un peu plus de chiffres... sudoku sûrement impossible ;)", md"""#### 🤓 Merci de mettre plus de chiffres ;) 
+		return "🤓 Merci de mettre un peu plus de chiffres... sudoku sûrement impossible ;)", md"""##### 🤓 Merci de mettre plus de chiffres ;) 
 			
 		En effet, bien que ce [Plutoku](https://github.com/4LD/plutoku) est quasi-parfait* 😄, certains cas (très rare bien sûr) peuvent mettre du temps (plus de 3 secondes) que je vous épargne ;)
 		
@@ -514,7 +584,7 @@ begin
 		# push!(listeHistoToursTotal , (nbTours, nbToursTotal)) ## toute l'histoire 
 		# nbHistoTot += 1 ## toute l'histoire	
 		### return matriceàlisteJS(mS') ## si on utilise : listeJSàmatrice(...)'
-		return matriceàlisteJS(mS), md"**Pour résoudre ce sudoku :** il a fallu faire **$nbChoixfait choix** et **$nbTours $((nbTours>1) ? :tours : :tour)** (si on savait à l'avance les bons choix), ce programme ayant fait _**$nbToursTotal $((nbToursTotal>1) ? :tours : :tour) au total**_ en $(essai) $((essai>1) ? :essais : :essai) !!! 😃", 
+		return matriceàlisteJS(mS), md"**Statistiques :** il a fallu faire **$nbChoixfait choix** et **$nbTours $((nbTours>1) ? :tours : :tour)** (si on savait à l'avance les bons choix), ce programme ayant fait _**$nbToursTotal $((nbToursTotal>1) ? :tours : :tour) au total**_ en $(essai) $((essai>1) ? :essais : :essai) pour résoudre ce sudoku !!! 😃", 
 (tour=nbTours,tt=nbToursTotal,essai=essai,noix=nbChoixfait,tours=listeTours,choix=listedechoix, zéros=listedesZéros,maths=listedancienneMat) 
 # (tour=nbTours,tt=nbToursTotal,essai=essai,noix=nbChoixfait,tours=listeTours,choix=listedechoix, zéros=listedesZéros,maths=listedancienneMat ,histoix=listeHistoChoix,histrice=listeHistoMat, histour=listeHistoToursTotal,histo=nbHistoTot) ## retours d'histoires 3
 	end
@@ -550,7 +620,7 @@ begin
 		lesClésZérosàSuppr=Int[]
 		if !allerAuChoixSuivant
 			for (key, (i,j)) in enumerate(lesZéros)
-				listechiffre = chiffrePossible(mS,i,j)
+				listechiffre = simplechiffrePossible(mS,i,j)
 				if isempty(listechiffre) ### Plus de possibilité (ou pas assez)... pas bon signe ^^
 					allerAuChoixSuivant = true # donc mauvais choix
 					break
@@ -611,7 +681,7 @@ begin
 	if !isa(x, Int) # Permet de choisir le nombre de zéro ou un intervale
 		x=fun(x)
 	end
-	x = (0 < x < 82) ? x : 81 # Pour ceux aux gros doigts, ou qui voit trop grand
+	x = (0 <= x < 82) ? x : 81 # Pour ceux aux gros doigts, ou qui voit trop grand
 	liste = shuffle!([(i,j) for i in 1:9 for j in 1:9])
 	for (i,j) in liste[1:x] # nbApproxDeZéros
 		matzéro[i,j] = 0
@@ -658,7 +728,7 @@ begin
 		if nbChiffres > nbChiffresMax
 			return mS
 		else 
-		listechiffre = chiffrePossible(mS,i,j)
+		listechiffre = simplechiffrePossible(mS,i,j)
 			if isempty(listechiffre) ### Pas bon signe ^^
 				if moinsOK || nbessai > 26
 					return mS
@@ -722,7 +792,7 @@ md"""Si besoin, dans cette session, le sudoku en cours (ci-dessous) peut rester 
 begin 
 	boutonSudokuInitial # Remettre le puce "ModifierInit" sur Le sudoku initial ;)
 	vieuxSudoku!(SudokuMémo[3]) # Permet de le remplacer par celui modifié
-end; md""" $(@bind viderOupas puces(["Vider le sudoku initial","Le sudoku initial ;)"],"Le sudoku initial ;)"; idPuces="ModifierInit")) $(html" <a href='#Bonus' style='padding-left: 10px; border-left: medium dashed #777;'>Bonus plus bas ↓</a>") : vieux sudoku et astuces
+end; md""" $(@bind viderOupas puces(["Vider le sudoku initial","Le sudoku initial ;)"],"Le sudoku initial ;)"; idPuces="ModifierInit")) $(html" <a href='#Bonus' style='padding-left: 10px; border-left: medium dashed #777;'>Bonus plus bas ↓</a>") : vieux sudoku et astuces
 """
 
 # ╔═╡ a038b5b0-23a1-11eb-021d-ef7de773ef0e
@@ -972,7 +1042,7 @@ function làhaut() {
 	var tabl = document.createElement("table");
 	vieillecopie = (copie ? copie.cloneNode(true) : tabl);
 	tabl.id = "copiefinie";
-	tabl.innerHTML = (copie ? copie.innerHTML : `<thead id='taide'><tr><th>Aucune solution 😜 ou c'est coché  <code>😉 Cachée</code><br><br></th></tr></thead>`) + `<tfoot id='tesfoot'><tr id='lignenonvisible'><th colspan="9">↪ Cliquer ici pour revenir au sudoku modifiable</th></tr></tfoot>`;
+	tabl.innerHTML = (copie ? copie.innerHTML : `<thead id='taide'><tr><td style='text-align: center;min-width: 340px;padding: 26px 0;'>Rien à montrer, c'est coché  <code>🤫 Cachée</code></td></tr></thead>`) + `<tfoot id='tesfoot'><tr id='lignenonvisible'><th colspan="9">↪ Cliquer ici pour revenir au sudoku modifiable</th></tr></tfoot>`;
 	père.appendChild(tabl);
 	document.getElementById("taide") ? document.getElementById("taide").addEventListener("click", déjàvu) : true;
 	document.getElementById("tesfoot").addEventListener("click", déjàvu);
@@ -984,7 +1054,7 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 </script><span id="va_et_vient">"""); bindJSudoku; md"""#### $vaetvient Sudoku initial ⤴ (modifiable) et sa solution : $(html"</span>") """
 
 # ╔═╡ bba0b550-2784-11eb-2f58-6bca9b1260d0
-md"""$(@bind voirOuPas puces(["😉 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"😉 Cachée"; idPuces="CacherRésultat") ) 
+md"""$(@bind voirOuPas puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"🤫 Cachée"; idPuces="CacherRésultat") ) 
 $(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
                                                 
 $(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…par chiffre possible"; idPuces="PossiblesEtSolution", classe="pasla" ) )"""
@@ -993,9 +1063,9 @@ $(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (m
 bindJSudoku isa Missing ? sudokuSolution = résoutSudoku(SudokuMémo[3]) : (SudokuMémo[3] = bindJSudoku; #= Pour que le sudoku en cours (initial modifié) reste en mémoire si besoin -> Le sudoku initial ;) =# sudokuSolution = résoutSudoku(bindJSudoku)); sudokuSolution[2] # La petite explication seule
 
 # ╔═╡ 4c810c30-239f-11eb-09b6-cdc93fb56d2c
-if bindJSudoku isa Missing || voirOuPas isa Missing || voirOuPas=="😉 Cachée"
-	md"""$(typeof(sudokuSolution[1])==String ? html"<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5>"  : md"###### 🤐 Le sudoku est caché pour le moment comme demandé")
-Bonne chance ! Si besoin, cocher `😉 Cachée` pour revoir ce message .
+if bindJSudoku isa Missing || voirOuPas isa Missing || voirOuPas=="🤫 Cachée"
+	md"""$(typeof(sudokuSolution[1])==String ? md"##### 🤐 Cela est caché pour le moment comme demandé ⚡"  : md"##### 🤐 Cela est caché pour le moment comme demandé")
+$(typeof(sudokuSolution[1])==String ? md"Pas de bol ! Cf. la remarque en gras plus bas. Si besoin, cocher `🤫 Cachée` pour revoir ceci."  : md"Bonne chance ! Si besoin, cocher `🤫 Cachée` pour revoir ce message.")
 
 Pour information, `En touchant, entrevoir les nombres…` permet en cliquant de faire apparaître (et disparaître via les chiffres bleus) le contenu choisi, comme un coup de pouce. De plus : 
 
@@ -1547,6 +1617,7 @@ pluto-shoulder {
 }
 </style>`;
 var stylécaché = html`<span id="stylé">${plutôtstylé}</span>`;
+// var stylécaché = html`<span id="stylé"></span>`; // /// /// FAUX ligne à supprimer
 function styléoupas() { 
 	var stylé = document.getElementById("stylé");
 	var cachémoiplutôt = document.getElementById("cachémoiplutôt");
@@ -1583,8 +1654,8 @@ return stylécaché;
 		});
 	};
 	return editCSS;
-	</script>"""); bonusetastuces = md"""#### $(html"<div id='Bonus' style='user-select: none; margin-top: 17px !important;'>Bonus : le sudoku en cours plus tard...</div>") 
-Je conseille de garder le code du sudoku en cours (en cliquant, la copie est automatique ⚡). \
+	</script>"""); bonusetastuces = md"""#### $(html"<div id='Bonus' style='user-select: none; margin-top: 17px !important;'>Bonus : le sudoku en cours pour plus tard...</div>") 
+Je conseille de garder le code du sudoku en cours (en cliquant, la copie est automatique✨). \
 $(html"<input type=button id='clégén' value='Copier le code à garder :)'><input id='pour-définir-le-sudoku-initial' type='text' style='font-size: x-small; margin-right: 2px; max-width: 38px;' />") **Note** : à coller dans un bloc-notes par exemple. 
 
 ##### ...à retrouver comme d'autres vieux sudoku : 
@@ -1595,12 +1666,12 @@ Enfin, lancer le code avec le bouton ▶ tout à droite, qui clignote justement
 Ce vieux sudoku est restoré en place du sudoku initial ! (et de [retour en haut ↑](#ModifierInit) de la page). 
 	
 $(html"<details open><summary style='list-style: none;'><h6 id='BonusAstuces' style='display:inline-block;user-select: none;'> Autres petites astuces :</h6></summary><style>details[open] summary::after {content: ' (cliquer ici pour les cacher)';} summary:not(details[open] summary)::after {content: ' (cliquer ici pour les revoir)';}</style>")
-   1. Modifier le premier sudoku (à vider si besoin), cocher ce que l'on souhaite; le sudoku du dessous répond aux ordres. Cocher `😉 Cachée` pour revoir les indications sur l'emploi des cases à cocher.
+   1. Modifier le premier sudoku (à vider si besoin), cocher ce que l'on souhaite; le sudoku du dessous répond aux ordres. Cocher `🤫 Cachée` pour revoir les indications sur l'emploi des cases à cocher.
    2. En réalité en dehors de cellule ou de case, le fait de coller (même en [haut](#BN) de la page) crée une cellule tout en bas (en plus). Cela peut faire gagner un peu de temps. On peut mettre plusieurs vieux sudokus : cependant seul le dernier, où le bouton ▶ fut appuyé, est pris en compte. \
-   3. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. $(html"<br>") En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. $(html"<br>") Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cet intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf.
+   3. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cet intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf.
    4. Il est possible de bouger avec les flèches, aller à la ligne suivante automatiquement (à la _[Snake](https://www.google.com/search?q=Snake)_). Il y a aussi des raccourcis, comme `H` = haut, `V` ou `G` = gauche, `D` `J` `N` = droite, `B` = bas. Ni besoin de pavé numérique, ni d'appuyer sur _Majuscule_, les touches suivantes sont idendiques `1234 567 890` = `AZER TYU IOP` = `&é"' (-è _çà`. 
    5. Il est possible de **remonter la solution** au lieu du sudoku modifiable en cliquant sur l'entête [Sudoku initial ⤴ (modifiable) et sa solution](#va_et_vient). On peut ensuite l'enlever pour revenir au sudoku modifiable, ↪ en cliquant sur le texte sous la solution remontée.
-   6. Il est possible de voir ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))), d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci ✨'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. $(html"<br>") Il est aussi possible de télécharger ce calepin $calepin
+   6. Il est possible de voir ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))), d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci 🌚'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. Il est aussi possible de télécharger ce calepin $calepin
    7. Enfin, passer en style **sombre** ou **lumineux** en cliquant sur [**Bonus**](#Bonus) ou $coool [tout en haut](#BN) :)
 $(html"</details>")
 $pourvoirplutôt 
@@ -1611,6 +1682,24 @@ $pourgarderletemps
 # ╔═╡ 98f8cc2c-3a84-484a-b5cf-590b3f6a8fd0
 
 
+# ╔═╡ 00000000-0000-0000-0000-000000000001
+PLUTO_PROJECT_TOML_CONTENTS = """
+[deps]
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+"""
+
+# ╔═╡ 00000000-0000-0000-0000-000000000002
+PLUTO_MANIFEST_TOML_CONTENTS = """
+# This file is machine-generated - editing it directly is not advised
+
+[[Random]]
+deps = ["Serialization"]
+uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[Serialization]]
+uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+"""
+
 # ╔═╡ Cell order:
 # ╟─96d2d3e0-2133-11eb-3f8b-7350f4cda025
 # ╟─caf45fd0-2797-11eb-2af5-e14c410d5144
@@ -1618,8 +1707,10 @@ $pourgarderletemps
 # ╟─a038b5b0-23a1-11eb-021d-ef7de773ef0e
 # ╟─7cce8f50-2469-11eb-058a-099e8f6e3103
 # ╟─bba0b550-2784-11eb-2f58-6bca9b1260d0
-# ╟─b2cd0310-2663-11eb-11d4-49c8ce689142
 # ╟─4c810c30-239f-11eb-09b6-cdc93fb56d2c
+# ╟─b2cd0310-2663-11eb-11d4-49c8ce689142
 # ╟─e986c400-60e6-11eb-1b57-97ba3089c8c1
 # ╠═98f8cc2c-3a84-484a-b5cf-590b3f6a8fd0
 # ╟─43ec2840-239d-11eb-075a-071ac0d6f4d4
+# ╟─00000000-0000-0000-0000-000000000001
+# ╟─00000000-0000-0000-0000-000000000002
