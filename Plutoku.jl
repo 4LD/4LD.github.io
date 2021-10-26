@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.16.4
+# v0.14.7
 
 using Markdown
 using InteractiveUtils
@@ -311,15 +311,18 @@ begin
 		début = """<span id="$idPuces" """ *(classe=="" ? ">" : """class="$classe">""")
 		fin = """</span><script>const form = document.getElementById('$idPuces')
 	form.oninput = (e) => { form.value = e.target.value; """ *
-		(idPuces=="CacherRésultat" ? """if (e.target.value=='🤫 Cachée') {
+		(idPuces=="CacherRésultat" ? raw"""if (e.target.value=='🤫 Cachée') {
 		document.getElementById('PossiblesEtSolution').classList.add('pasla');
+		document.getElementById('puchoixàmettreenhaut').classList.add('pasla');
 		} else {
 		document.getElementById('PossiblesEtSolution').classList.remove('pasla');
+		document.getElementById('puchoixàmettreenhaut').classList.remove('pasla');
+		};""" : "") *
+		(idPuces=="PossiblesEtSolution" ? raw"""if (e.target.value=='…de possibilités (min ✔)') {
+		document.getElementById('puchoixàmettreenhaut').classList.add('maistesou');
+		} else {
+		document.getElementById('puchoixàmettreenhaut').classList.remove('maistesou');
 		};""" : "") * """}
-							// and bubble upwards
-	// set initial value:
-	const selected_radio = form.querySelector('input[checked]');
-	if(selected_radio != null) {form.value = selected_radio.value;}
 	</script>"""
 		inputs = ""
 		for item in liste
@@ -419,8 +422,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
-							document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('input')); 
+							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
+							cible.dispatchEvent(new Event('ctop')); 
 						};
 				}}; 
 				
@@ -453,8 +456,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
-							document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('input')); 
+							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
+							cible.dispatchEvent(new Event('ctop')); 
 						};
 				}}; 
 				
@@ -645,8 +648,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
-							document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('input')); 
+							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
+							cible.dispatchEvent(new Event('ctop')); 
 						};
 				}};	
 				
@@ -681,8 +684,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
-							document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('input')); 
+							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
+							cible.dispatchEvent(new Event('ctop')); 
 						};
 				}};	
 				
@@ -705,8 +708,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
-							document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('input')); 
+							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
+							cible.dispatchEvent(new Event('ctop')); 
 						};
 				}}; """)*raw"""
 						e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
@@ -733,8 +736,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
-							document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('input')); 
+							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
+							cible.dispatchEvent(new Event('ctop')); 
 						};
 				}}; 
 						e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
@@ -841,7 +844,7 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 				sac(j,i,k,ii,jj,listechiffre,fusiblescol,dicco,diclo,dicko)
 				sac(i,j,k,ii,jj,listechiffre,fusibleslig,dillo,dilco,dilko)
 				sak(i,j,k,ii,jj,listechiffre,fusiblescar,diklo,dikco,dikko)
-				if isempty(listechiffre)
+				if isempty(listechiffre) ### && pasAssezDePropal!(
 					allerAuChoixSuivant = true # donc mauvais choix
 			lesZérosàSuppr=Set{Tuple{Int,Int,Int,UnitRange{Int},UnitRange{Int}}}()
 					break
@@ -1448,6 +1451,37 @@ window.sudokuViewReactiveValue = ({_sudoku:html, data}) => {
 		document.activeElement.select();
     })
 		
+    input.addEventListener('ctop',(e) => { // mis à jour par chiffre sélectionné
+	  const i = e.target.getAttribute('data-row'); // daligne(e)
+	  const j = e.target.getAttribute('data-col'); // dacol(e)
+	  const val = e.target.value //parseInt(e.target.value);
+	  const oldata = data[i][j];
+
+	  if (val <= 9 && val >=1) {
+		data[i][j] = parseInt(val);
+	  } else { 
+		e.target.value = data[i][j] === 0 ? '' : data[i][j];
+	  }
+
+		if (oldata === data[i][j]) {
+			e.stopPropagation();
+			e.preventDefault();
+		} else {
+			// Efface les puces car cela a été touché
+			var ele = document.getElementsByName("ModifierInit");
+			for(var ni=0;ni<ele.length;ni++)
+				ele[ni].checked = false;
+			const jdata = JSON.stringify(data);
+			if (jdata == premier) {
+				ele[0].checked = true;
+			} else if (jdata == deuxième) {
+				ele[1].checked = true;
+			}
+			html.setAttribute('sudata', jdata);
+			html.dispatchEvent(new Event('input'));
+		}
+    })
+		
   }) 
   var ele = document.getElementsByName("ModifierInit");
   const jdata = JSON.stringify(data);
@@ -1474,19 +1508,19 @@ begin
 end
 
 # ╔═╡ bba0b550-2784-11eb-2f58-6bca9b1260d0
-#= md"""$(@bind voirOuPas puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"🤫 Cachée"; idPuces="CacherRésultat") ) 
-
-$(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
-                                                
-$(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…par chiffre possible"; idPuces="PossiblesEtSolution", classe="pasla" ) )""" =#
+#=
 md"""$(@bind voirOuPas puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"Pour toutes les cases, voir les nombres…"; idPuces="CacherRésultat") ) 
 
 $(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
                                                 
-$(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…de la solution 🚩"; idPuces="PossiblesEtSolution", classe="" ) )
+$(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…de la solution 🚩"; idPuces="PossiblesEtSolution", classe="" ) ) =#
+md"""$(@bind voirOuPas puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"🤫 Cachée"; idPuces="CacherRésultat") ) 
 
-$(html"<div style='margin-top: 10px;user-select: none;text-align: center;font-style: italic;font-weight: bold;color: #777'><input type='checkbox' id='choixàmettreenhaut' name='choixàmettreenhaut' ><label for='choixàmettreenhaut' style='margin-left: 2px;'>Mettre le prochain chiffre sélectionné dans le sudoku initial ;)</label></div>")"""
-# $(html"<div class='pasla' ..."""
+$(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
+                                                
+$(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…par chiffre possible"; idPuces="PossiblesEtSolution", classe="pasla" ) )
+
+$(html"<div id='puchoixàmettreenhaut' class='pasla' style='margin-top: 10px;user-select: none;text-align: center;font-style: italic;font-weight: bold;color: #777'><input type='checkbox' id='choixàmettreenhaut' name='choixàmettreenhaut' ><label for='choixàmettreenhaut' style='margin-left: 2px;'>Cocher ici, puis toucher le chiffre à mettre dans le sudoku initial</label></div>")"""
 
 # ╔═╡ b2cd0310-2663-11eb-11d4-49c8ce689142
 if bindJSudoku isa Missing
@@ -1795,6 +1829,10 @@ input[type="radio" i] {
 	// visibility:hidden;
 	filter: blur(3px);
 }
+.maistesou{
+	// visibility:hidden;
+	filter: blur(3px);
+}
 
 pluto-output.rich_output,
 div {
@@ -1962,6 +2000,10 @@ input[type="radio" i] {
 	// visibility:hidden;
 	filter: blur(3px);
 }
+.maistesou{
+	// visibility:hidden;
+	filter: blur(3px);
+}
 /* noir */ /*
 pluto-output.rich_output,
 div {
@@ -2066,7 +2108,7 @@ pluto-shoulder {
 }
 </style>`;
 var stylécaché = html`<span id="stylé">${plutôtstylé}</span>`;
-  var stylécaché = html`<span id="stylé"></span>`; ///FAUX bidouille à supprimer
+// var stylécaché = html`<span id="stylé"></span>`; // FAUX bidouille à supprimer ////
 function styléoupas() { 
 	var stylé = document.getElementById("stylé");
 	var cachémoiplutôt = document.getElementById("cachémoiplutôt");
@@ -2103,23 +2145,23 @@ return stylécaché;
 		});
 	};
 	return editCSS;
-	</script>"""); bonusetastuces = md"""#### $(html"<div id='Bonus' style='user-select: none; margin-top: 17px !important;'>Bonus : le sudoku en cours pour plus tard...</div>") 
-Je conseille de garder le code du sudoku en cours (en cliquant, la copie est automatique✨). 
-$(html"<input type=button id='clégén' value='Copier le code à garder :)'><input id='pour-définir-le-sudoku-initial' type='text' style='font-size: x-small; margin-right: 2px; max-width: 38px;' />") **Note** : à coller dans un bloc-notes par exemple. 
+	</script>"""); bonusetastuces = md"""#### $(html"<div id='Bonus' style='user-select: none; margin-top: 17px !important;'>Bonus : le sudoku en cours pour plus tard...</div>") 
+Je conseille de garder le code du sudoku en cours (en cliquant, la copie est automatique ✨). 
+$(html"<input type=button id='clégén' value='Copier le code à garder :)'><input id='pour-définir-le-sudoku-initial' type='text' style='font-size: x-small; margin-right: 2px; max-width: 38px;' />") **Note** : à coller ailleurs dans un bloc-notes par exemple. 
 
-##### ...à retrouver comme d'autres vieux sudoku : 
+##### ...à retrouver comme d'autres vieux sudokus : 
 
 Ensuite, dans une (nouvelle) session, cliquer dans _`Enter cell code...`_ tout en bas ↓ et coller le code qui fut gardé (cf. note ci-dessus).
 Enfin, lancer le code avec le bouton ▶ tout à droite (qui clignote justement). 
-Ce vieux sudoku est restoré et en place du sudoku initial ! (cela [retourne en haut ↑](#ModifierInit) de la page aussi). 
+Ce vieux sudoku est restoré et en place du sudoku initial ! (cela [retourne aussi en haut ↑](#ModifierInit) de la page). 
 	
 $(html"<details open><summary style='list-style: none;'><h6 id='BonusAstuces' style='display:inline-block;user-select: none;'> Autres petites astuces :</h6></summary><style>details[open] summary::after {content: ' (cliquer ici pour les cacher)';} summary:not(details[open] summary)::after {content: ' (cliquer ici pour les revoir)';}</style>")
-   1. Modifier le premier sudoku (à vider si besoin, grâce au premier choix) et cocher ensuite ce que l'on souhaite voir comme aide ou solution; le sudoku du dessous répond ainsi aux ordres. Cocher `🤫 Cachée` pour revoir les indications sur l'emploi des cases à cocher. 
-   2. Il est possible de **remonter la solution** au lieu du sudoku modifiable en cliquant sur l'entête [Sudoku initial ⤴ (modifiable) et sa solution](#va_et_vient). On peut ensuite l'enlever pour revenir au sudoku modifiable, ↪ en cliquant sur le texte sous la solution remontée. 
-   3. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cet intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf.
+   1. Modifier le premier sudoku (à vider si besoin, grâce au premier choix) et cocher ensuite ce que l'on souhaite voir comme aide ou solution ; le sudoku du dessous répond ainsi aux ordres. Cocher `🤫 Cachée` pour revoir des indications sur l'emploi des cases à cocher. 
+   2. En réalité en dehors de cellule ou de case, le fait de coller (même en [haut](#BN) de la page) crée une cellule tout en bas (en plus). Cela peut faire gagner un peu de temps. On peut mettre plusieurs vieux sudokus : cependant seul le dernier, où le bouton ▶ fut appuyé, est pris en compte. 
+   3. Il est possible de **remonter la solution** au lieu du sudoku modifiable en cliquant sur l'entête [Sudoku initial ⤴ (modifiable) et sa solution](#va_et_vient). On peut ensuite l'enlever pour revenir au sudoku modifiable, ↪ en cliquant sur le texte sous la solution remontée. 
    4. Il est possible de bouger avec les flèches, aller à la ligne suivante automatiquement (à la _[Snake](https://www.google.com/search?q=Snake)_). Il y a aussi des raccourcis, comme `H` = haut, `V` ou `G` = gauche, `D` `J` `N` = droite, `B` = bas. Ni besoin de pavé numérique, ni d'appuyer sur _Majuscule_, les touches suivantes sont idendiques `1234 567 890` = `AZER TYU IOP` = `&é"' (-è _çà`. 
-   5. En réalité en dehors de cellule ou de case, le fait de coller (même en [haut](#BN) de la page) crée une cellule tout en bas (en plus). Cela peut faire gagner un peu de temps. On peut mettre plusieurs vieux sudokus : cependant seul le dernier, où le bouton ▶ fut appuyé, est pris en compte. 
-   6. Ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))) est observable, d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci 📝🤓'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. Il est aussi possible de télécharger ce calepin $calepin 
+   5. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cet intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf. 
+   6. Ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))) est observable, d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci 📝🤓'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. Il est aussi possible de télécharger ce calepin $calepin 
    7. Enfin, passer en style **sombre** ou **lumineux** en cliquant sur [**Bonus**](#Bonus) ou $coool [tout en haut](#BN) :) 
 $(html"</details>")
 $pourvoirplutôt 
@@ -2129,39 +2171,6 @@ $pourgarderletemps
 
 # ╔═╡ 98f8cc2c-3a84-484a-b5cf-590b3f6a8fd0
 
-
-# ╔═╡ ac584322-2f0a-492c-aa3b-d4b7c21f74f1
-vieuxSudoku!([[8,0,0,0,0,0,0,0,0],[0,0,3,6,0,0,0,0,0],[0,7,0,0,9,0,2,0,0],[0,5,0,0,0,7,0,0,0],[0,0,0,0,4,5,7,0,0],[0,0,0,1,0,0,0,3,0],[0,0,1,0,0,0,0,6,8],[0,0,8,5,0,0,0,1,0],[0,9,0,0,0,0,4,0,0]])
-
-# ╔═╡ 5e4ea4ed-7539-482f-a983-f3c0095510a6
-vsd()
-
-# ╔═╡ 011dfe8c-da04-4687-b895-eff754b6d03a
-vieuxSudoku!([[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,3,0,8,5],[0,0,1,0,2,0,0,0,0],[0,0,0,5,0,7,0,0,0],[0,0,4,0,0,0,1,0,0],[0,9,0,0,0,0,0,0,0],[5,0,0,0,0,0,0,7,3],[0,0,2,0,1,0,0,0,0],[0,0,0,0,4,0,0,0,9]])
-
-# ╔═╡ 96f89e5b-af50-4eb3-88c9-a56ace5afd25
-vieuxSudoku!([[0,1,0,0,0,0,0,0,0],[0,7,0,0,0,0,0,0,0],[0,9,0,0,0,0,0,0,7],[0,4,0,0,5,0,2,0,0],[0,3,6,0,0,0,1,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,8,5,0],[0,0,1,0,0,6,0,0,0],[0,0,0,0,1,0,0,0,0]])
-
-# ╔═╡ b25b69b9-86ce-44ff-91d8-3b2062c45a34
-vieuxSudoku!([[8,0,9,0,0,0,0,0,0],[0,0,0,5,7,3,0,0,0],[0,0,0,0,0,0,2,0,1],[0,4,0,9,8,0,0,7,0],[2,0,0,0,0,5,9,3,0],[0,8,0,3,2,0,0,6,0],[0,0,0,0,0,0,8,0,7],[0,0,0,7,9,2,0,0,0],[5,0,7,0,0,0,0,0,0]])
-
-# ╔═╡ 00000000-0000-0000-0000-000000000001
-PLUTO_PROJECT_TOML_CONTENTS = """
-[deps]
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-"""
-
-# ╔═╡ 00000000-0000-0000-0000-000000000002
-PLUTO_MANIFEST_TOML_CONTENTS = """
-# This file is machine-generated - editing it directly is not advised
-
-[[Random]]
-deps = ["Serialization"]
-uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-
-[[Serialization]]
-uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-"""
 
 # ╔═╡ Cell order:
 # ╟─96d2d3e0-2133-11eb-3f8b-7350f4cda025
@@ -2175,10 +2184,3 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 # ╟─e986c400-60e6-11eb-1b57-97ba3089c8c1
 # ╠═98f8cc2c-3a84-484a-b5cf-590b3f6a8fd0
 # ╟─43ec2840-239d-11eb-075a-071ac0d6f4d4
-# ╠═ac584322-2f0a-492c-aa3b-d4b7c21f74f1
-# ╠═5e4ea4ed-7539-482f-a983-f3c0095510a6
-# ╠═011dfe8c-da04-4687-b895-eff754b6d03a
-# ╠═96f89e5b-af50-4eb3-88c9-a56ace5afd25
-# ╠═b25b69b9-86ce-44ff-91d8-3b2062c45a34
-# ╟─00000000-0000-0000-0000-000000000001
-# ╟─00000000-0000-0000-0000-000000000002
