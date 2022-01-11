@@ -25,6 +25,14 @@ begin
 	const suivant = [401, 801, 1] # 81 pour le premier (dans la fonction résoutSudoku)
 	using Random: shuffle! # Astuce pour être encore plus rapide = Fast & Furious
 	## shuffle!(x) = x ## Si besoin, mais... Everyday I shuffling ! (dixit LMFAO)
+	
+	struct BondJamesBond ## BondDefault(element, default) ### pour Base.get() et @bind
+		oo7 # element
+		vodkaMartini # default
+	end # from https://github.com/fonsp/pluto-on-binder/pull/11
+	Base.show(io::IO, m::MIME"text/html", bd::BondJamesBond) = Base.show(io,m, bd.oo7)
+	Base.get(bd::BondJamesBond) = bd.vodkaMartini 
+	## https://github.com/fonsp/disorganised-mess/blob/c0332f4a1cc94c4ea02850ef6d19adc143ba186f/plotclicktracker%20experiments.jl#L158-L165
 
 	SudokuMémo=[[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]],
 	[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,1,2,3,4,5,0,0,0],[0,2,0,0,3,0,6,0,0],[0,3,4,5,6,0,0,7,0],[0,6,0,0,7,0,8,0,0],[0,7,0,0,8,9,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]],
@@ -249,7 +257,7 @@ begin
 	 # return çaNavancePas
 	 return nothing
 	end
-	function pasAssezDePropal!(i::Int,j::Int, listepossibles::Set{Int},dictCheckLi::Dict{Set{Int}, Set{Int}},dictCheckCj::Dict{Set{Int}, Set{Int}},dictCheckCarré::Dict{Set{Int}, Set{Tuple{Int,Int}}},Nimp::Dict{Tuple{Int,Int}, Set{Int}},karré::Int=kelcarré(i,j), ii::UnitRange{Int}=carr(i), jj::UnitRange{Int}=carr(j), setlig::Set{Int}=set19, setcol::Set{Int}=set19, setcar::Set{Tuple{Int,Int}}=Set(tuplecarré(ii,jj)) ) 
+	function pasAssezDePropal!(i::Int,j::Int, listepossibles::Set{Int},dictCheckLi::Dict{Set{Int}, Set{Int}},dictCheckCj::Dict{Set{Int}, Set{Int}},dictCheckCarré::Dict{Set{Int}, Set{Tuple{Int,Int}}},Nimp::Dict{Tuple{Int,Int}, Set{Int}}, setlig::Set{Int}=set19, setcol::Set{Int}=set19) #ii::UnitRange{Int}=carr(i), jj::UnitRange{Int}=carr(j), setcar::Set{Tuple{Int,Int}}=Set(tuplecarré(ii,jj)) ) 
 	# Ici l'idée est de voir s'il y a plus chiffres à mettre que de cases : en regardant tout ! entre deux cases, trois cases... sur la ligne, colonne, carré ^^
 	# Bref, s'il n'y a pas assez de propositions pour les chiffres à caser c'est vrai
 	# C'est pas faux : donc ça va. 
@@ -292,7 +300,7 @@ begin
 			if length(kk) > length(v)
 				vv = union(v, Set([(i,j)]), get(dictCheckCarré, kk, Set{Tuple{Int,Int}}() ) ) 
 				if length(kk) == length(vv)
-					for (limp,ljmp) in setdiff(setcar, vv) # tuplecarré(ii,jj,vv)
+					for (limp,ljmp) in setdiff(Set(tuplecarré(carr(i),carr(j))), vv) #setcar,vv
 						union!(get!(Nimp,(limp,ljmp),Set{Int}() ), kk)
 					end
 				end
@@ -313,10 +321,15 @@ begin
 	form.oninput = (e) => { form.value = e.target.value; """ *
 		(idPuces=="CacherRésultat" ? raw"""if (e.target.value=='🤫 Cachée') {
 		document.getElementById('PossiblesEtSolution').classList.add('pasla');
-		document.getElementById('puchoixàmettreenhaut').classList.add('pasla');
+		document.getElementById('divers').classList.add('pasla');
+		} else if (e.target.value=='Pour toutes les cases, voir les nombres…') {
+		document.getElementById('pucaroligne').classList.add('maistesou');
+		document.getElementById('PossiblesEtSolution').classList.remove('pasla');
+		document.getElementById('divers').classList.remove('pasla');
 		} else {
 		document.getElementById('PossiblesEtSolution').classList.remove('pasla');
-		document.getElementById('puchoixàmettreenhaut').classList.remove('pasla');
+		document.getElementById('divers').classList.remove('pasla');
+		document.getElementById('pucaroligne').classList.remove('maistesou');
 		};""" : "") *
 		(idPuces=="PossiblesEtSolution" ? raw"""if (e.target.value=='…de possibilités (min ✔)') {
 		document.getElementById('puchoixàmettreenhaut').classList.add('maistesou');
@@ -371,14 +384,12 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 
 </script><span id="va_et_vient">""") # Pour le texte entre les deux sudoku (initaux et solution). Cela permet de remonter la solution en cliquant dessus
 
-	function htmlSudoku(JSudokuFini=jsvd(),JSudokuini=jsvd() ; toutVoir=true)
+	function htmlSudoku(JSudokuFini::Union{String, Vector{Vector{Int}}}=jsvd(),JSudokuini::Union{String, Vector{Vector{Int}}}=jsvd() ; toutVoir::Bool=true)
 	# Pour sortir de la matrice (conversion en tableau en HTML) du sudoku
 	# Le JSudokuini permet de mettre les chiffres en bleu (savoir d'où l'on vient)
 	# Enfin, on peut choisir de voir petit à petit en cliquant ou toutVoir d'un coup
-		if isa(JSudokuFini, String)
-			return HTML("<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5><table id='sudokufini' style='user-select: none;' <tbody><tr><td style='text-align: center;min-width: 340px;padding: 26px 0;'>$JSudokuFini</td></tr></tbody></table>")
-		else
-			return HTML(raw"""<script id="scriptfini">
+	### if isa(JSudokuFini, String)... avait un bug d'affichage pour le reste du code...
+		isa(JSudokuFini, String) ? (return HTML("<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5><table id='sudokufini' style='user-select: none;' <tbody><tr><td style='text-align: center;min-width: 340px;padding: 26px 0;'>$JSudokuFini</td></tr></tbody></table>")) : (return HTML(raw"""<script id="scriptfini">
 		// stylélàbasavecbonus!
 				
 		const createSudokuHtml = (values, values_ini) => {	
@@ -406,6 +417,15 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 			  <tbody>${htmlData}</tbody>
 			</table>`  
 		  // return {_sudoku,data};
+		const jdataini = JSON.stringify(values_ini);
+		const jdataFini = JSON.stringify(values);
+  		_sudoku.setAttribute('sudataini', jdataini);
+  		_sudoku.setAttribute('sudatafini', jdataFini);
+		var sudokuiniàvérif = document.getElementById("sudokincipit");
+		if (sudokuiniàvérif && sudokuiniàvérif.getAttribute('sudata') != jdataini) {
+			// sudokuiniàvérif. ... .dispatchEvent(new Event('ctop')); // à voir...
+			return html`<h5 style='text-align: center;user-select: none;'>Merci de double-cliquez ici ;)</h5>`;
+		}; // > https://mybinder.org/v2/gh/fonsp/pluto-on-binder/v0.14.7?urlpath=pluto
 		return _sudoku;
 				};
 		window.msga = (_sudoku) => {
@@ -422,6 +442,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
+							e.target.classList.remove("norblanc");
+							e.target.classList.add("norbleu");
 							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
 							cible.dispatchEvent(new Event('ctop')); 
 						};
@@ -446,7 +468,22 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
   		tds.forEach(td => {
 				
 			td.addEventListener('click', (e) => {
-				e.target.classList.toggle("blur");
+				if (document.getElementById("caroligne")) {
+					if (document.getElementById("caroligne").checked) {	
+						const ilig = e.target.getAttribute('data-row');
+						const jcol = e.target.getAttribute('data-col'); 
+						const orNicar = (lign, colo) => Math.floor(ilig/3)==Math.floor(lign/3) && Math.floor(jcol/3)==Math.floor(colo/3) ;
+						var grantb = e.target.parentElement.parentElement;
+						for(let grani=0; grani<9;grani++){ 
+						for(let granj=0; granj<9;granj++){ 
+						 var tdf = grantb.childNodes[grani].childNodes[granj];
+						 if (tdf.getAttribute('data-row') == ilig || tdf.getAttribute('data-col') == jcol || orNicar(tdf.getAttribute('data-row'),tdf.getAttribute('data-col')) ) {
+						  tdf.classList.remove("blur");
+						} }};
+					} else {
+					e.target.classList.toggle("blur");
+				}};
+				// e.target.classList.toggle("blur");
 					
 				if (document.getElementById("choixàmettreenhaut")) {
 					if (document.getElementById("choixàmettreenhaut").checked) {
@@ -456,6 +493,8 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = vale; 
+							e.target.classList.remove("norblanc");
+							e.target.classList.add("norbleu");
 							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
 							cible.dispatchEvent(new Event('ctop')); 
 						};
@@ -463,7 +502,6 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 				
 			});
 		});	""")*raw"""
-				
 		  return _sudoku;
 
 		};
@@ -471,23 +509,26 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 		// sinon : return createSudokuHtml(...)._sudoku;
 		return msga(createSudokuHtml(""" *"$JSudokuFini"*", "*"$JSudokuini"*""") );
 		</script>""")
-		end
+		)### end ### if isa(JSudokuFini, String)... suite et fin du bug d'affichage
 	end
 	htmls = htmlSudoku ## mini version (ou alias plus court si besoin)
 	htmat = htmlSudoku ∘ matriceàlisteJS ## mini version
-	
-	function chiffrePropal(mat,limp,i,j) # Remplit une case avec tous ses chiffres possibles, en mettant le 1 en haut à gauche et le 9 en bas à droite (le 5 est donc au centre). S'il n'y a aucune possibilité, on remplit tout avec des caractères bizarres ‽
+
+	const pt1 = "·" # "." ## Caractères de remplissage pour mieux voir le nbPropal
+	const pt2 = "◌" # "○" # "◘" # "-" # ":"
+	const pt3 = "●" # "■" # "▬" # "—" # "⁖" # "⫶"
+	function chiffrePropal(mat::Array{Int,2},limp::Set{Int},i::Int,j::Int,vide::Bool) # Remplit une case avec tous ses chiffres possibles, en mettant le 1 en haut à gauche et le 9 en bas à droite (le 5 est donc au centre). S'il n'y a aucune possibilité, on remplit tout avec des caractères bizarres ‽
 	# Pour mise en forme en HTML mat3 : 3x3 (une matrice de 3 lignes et 3 colonnes)
 		cp = chiffrePossible(mat,i,j,limp)
 		if isempty(cp)
 			return [["◜","‽","◝"],["¡","/","!"],["◟","_","◞"]]
 		end
-		return matriceàlisteJS(reshape([((x in cp) ? string(x) : " ") for x in 1:9], (3,3)),3)
+		# lcp = length(cp)
+		# vi = (vide ? " " : (lcp<4 ? pt1 : (lcp<7 ? pt2 : pt3)))
+		vi = (vide ? " " : "◦") # "⨯") # pt1)
+		return matriceàlisteJS(reshape([((x in cp) ? string(x) : vi) for x in 1:9], (3,3)),3)
 	end
-	const pt1 = "·" # "." ## Caractères de remplissage pour mieux voir le nbPropal
-	const pt2 = "◌" # "○" # "◘" # "-" # ":"
-	const pt3 = "●" # "■" # "▬" # "—" # "⁖" # "⫶"
-	function nbPropal(mat,limp,i,j) # Assez proche de chiffrePropal ci-dessus, mais ne montre pas les chiffres possibles. Cela montre le nombres de chiffres possibles, en remplissant petit à petit avec pt1 à pt3 suivant.
+	function nbPropal(mat::Array{Int,2},limp::Set{Int},i::Int,j::Int) # Assez proche de chiffrePropal ci-dessus, mais ne montre pas les chiffres possibles. Cela montre le nombres de chiffres possibles, en remplissant petit à petit avec pt1 à pt3 suivant.
 	# Pour mise en forme en HTML mat3 : 3x3
 		lcp = length(chiffrePossible(mat,i,j,limp))
 		if lcp == 0
@@ -496,7 +537,7 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 			return matriceàlisteJS(reshape([(x == lcp ? string(x) : (x<lcp ? (lcp<4 ? pt1 : (lcp<7 ? pt2 : pt3)) : " ")) for x in 1:9], (3,3)),3), lcp
 		end
 	end
-	function htmlSudokuPropal(JSudokuini=jsvd(),JSudokuFini=nothing ; toutVoir=true, parCase=true, somme=false)
+	function htmlSudokuPropal(JSudokuini::Union{String, Vector{Vector{Int}}}=jsvd(),JSudokuFini::Union{String, Vector{Vector{Int}}}=jsvd() ; toutVoir::Bool=true, parCase::Bool=true, somme::Bool=true)
 	# Assez proche de htmlSudoku, mais n'a pas besoin d'avoir un sudoku résolu en entrée. En effet, il ne montre que les chiffres (ou leur nombre = somme) possibles pour le moment.
 	# Il y a plusieurs cas : (cela est peutêtre à changer)
 		# toutVoir ou non : découvre tous les cellules si toutVoir (sinon à cliquer)
@@ -568,7 +609,7 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 					end
 				end
 			end
-			parCase = toutVoir
+			parCase = toutVoir # bidouille à changer ?
 			toutVoir = true
 			if 0 < mine < 9
 				for (i,j) in grisemine
@@ -578,9 +619,10 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 			JPropal = matriceàlisteJS(mnPropal)
 		else
 			mPropal = fill(fill( fill("0",3),3) , (9,9) )
+			blanc = 
 			for j in 1:9, i in 1:9
 				if mS[i,j] == 0
-					mPropal[i,j] = chiffrePropal(mS, mImp[i,j], i, j)
+					mPropal[i,j] = chiffrePropal(mS, mImp[i,j], i, j, parCase)
 				end
 			end
 			JPropal = matriceàlisteJS(mPropal)
@@ -613,7 +655,7 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 					}
 					htmlMiniData.push(html`<tr style="border-style: none !important;">${htmlMiniRow}</tr>`);
 				  }
-				var mini_sudoku = html`<table class="minitab" """*(toutVoir && parCase ? "" : raw"""style="user-select: none;" """)*raw""">
+				var mini_sudoku = html`<table class="minitab" style="user-select: none;">
 			  <tbody>${htmlMiniData}</tbody>
 			</table>`
 				}
@@ -628,136 +670,171 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 			const isMediumBis = (i%3 === 0);
     		htmlData.push(html`<tr ${isMediumBis?'style="border-style:solid !important; border-top-width:medium !important;"':''}>${htmlRow}</tr>`);
 		  }
-		  const _sudoku = html`""" * (isa(JSudokuFini, String) ? raw"<h5 style='text-align: center;'> ⚡ Attention, sudoku initial à revoir ! </h5>" : raw"") * """<table id="sudokufini" """*(toutVoir && parCase ? "" : raw"""style="user-select: none;" """)*raw""">
+		  const _sudoku = html`""" * (isa(JSudokuFini, String) ? raw"<h5 style='text-align: center;user-select: none;'> ⚡ Attention, sudoku initial à revoir ! </h5>" : raw"") * raw"""<table id="sudokufini" style="user-select: none;">
 			  <tbody>${htmlData}</tbody>
 			</table>`  
 			
+		const jdataini = JSON.stringify(values_ini);
+		const jdataFini = JSON.stringify(mvalues);
+  		_sudoku.setAttribute('sudataini', jdataini);
+  		_sudoku.setAttribute('sudatafini', jdataFini);
+		var sudokuiniàvérif = document.getElementById("sudokincipit");
+		if (sudokuiniàvérif && sudokuiniàvérif.getAttribute('sudata') != jdataini) {
+			// sudokuiniàvérif.dispatchEvent(new Event('ctop'));
+			// document.querySelector("#sudokincipit > tbody > tr > td > input[type=text]").dispatchEvent(new Event('ctop'));
+			return html`<h5 style='text-align: center;user-select: none;'>Merci de double-cliquez ici ;)</h5>`;
+		}; // > https://mybinder.org/v2/gh/fonsp/pluto-on-binder/v0.14.7?urlpath=pluto
 		return _sudoku;
 			};
 			window.msga = (_sudoku) => {
-				"""*(toutVoir && parCase ? (somme ? "" : raw"""
-		let tds = _sudoku.querySelectorAll('td.mini');
-  		tds.forEach(td => {
-			td.addEventListener('click', (e) => {
-				
-				if (document.getElementById("choixàmettreenhaut")) {
-					if (document.getElementById("choixàmettreenhaut").checked) {
-						const lign = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row')) + 1; // 3 et 3
-						const colo = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col')) + 1;
-						const vale = e.target.innerHTML; // pas utile dans ce cas !
-						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
-						if (!(isNaN(vale))) {
-							cible.value = vale; 
-							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('ctop')); 
-						};
-				}};	
-				
-			})});	
-					""") : raw"""
-		let tdbleus = _sudoku.querySelectorAll('td.grandbleu');
-  		tdbleus.forEach(tdbleu => {
-			tdbleu.addEventListener('click', (e) => {
-				var grantb = e.target.parentElement.parentElement;
-				for(let grani=0; grani<9;grani++){ 
-				for(let granj=0; granj<9;granj++){ 
-				 if (grantb.childNodes[grani].childNodes[granj].childNodes[0].childNodes[1]!=null) {
-				for(let minii=0; minii<3;minii++){ 
-				for(let minij=0; minij<3;minij++){ 
-				grantb.childNodes[grani].childNodes[granj].childNodes[0].childNodes[1].childNodes[minii].childNodes[minij].classList.add("blur");
-				
-				}} } }};
-			});
-		});
-				
-		let tds = _sudoku.querySelectorAll('td.miniblur');
-  		tds.forEach(td => {
-			
-			"""*(parCase ? raw"""
-			td.addEventListener('click', (e) => {
-				
-				if (document.getElementById("choixàmettreenhaut")) {
-					if (document.getElementById("choixàmettreenhaut").checked) {
-						const lign = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row')) + 1; // 2 et 3
-						const colo = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col')) + 1;
-						const vale = e.target.innerHTML; // pas utile dans ce cas !
-						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
-						if (!(isNaN(vale))) {
-							cible.value = vale; 
-							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('ctop')); 
-						};
-				}};	
-				
-				e.target.parentElement.parentElement.childNodes.forEach(ligne => {
-				  ligne.childNodes.forEach(colon => {
-					colon.classList.toggle("blur");
-				  });
-				}); 
-			});	
-				""" : (toutVoir ? raw"""	
-			td.addEventListener('click', (e) => {
-				const ilig = e.target.getAttribute('data-row');
-				const jcol = e.target.getAttribute('data-col'); 
-				
-				"""*(somme ? "" : raw"""if (document.getElementById("choixàmettreenhaut")) {
-					if (document.getElementById("choixàmettreenhaut").checked) {
-						const lign = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row')) + 1; // 3 et 1
-						const colo = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col')) + 1;
-						const vale = e.target.innerHTML;
-						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
-						if (!(isNaN(vale))) {
-							cible.value = vale; 
-							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('ctop')); 
-						};
-				}}; """)*raw"""
-						e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
-					tr.childNodes.forEach(tdd => {
+				const justeremonte = (tdmini) => { // 3 et 2+3
+				"""*(somme ? raw"" : raw"""
+				tdmini.forEach(td => {
+					td.addEventListener('click', (e) => {
+						
+						if (document.getElementById("choixàmettreenhaut")) {
+							if (document.getElementById("choixàmettreenhaut").checked) {
+								const lign = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row')) + 1; // 3 et 2+3
+								const colo = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col')) + 1;
+								const vale = e.target.innerHTML; // pas utile dans ce cas !
+								var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
+								if (!(isNaN(vale))) {
+									cible.value = vale; 
+									e.target.classList.toggle("norbleu");
+									// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
+									cible.dispatchEvent(new Event('ctop')); 
+								};
+						}};	
+						
+				})}); """)*raw"""};
 
-						if (tdd.childNodes[0].childNodes[1]!=null){
-				tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.toggle("blur");
-					}});
-				});		
-			}); """ : raw"""
-			
-			td.addEventListener('click', (e) => {
-				const ilig = e.target.getAttribute('data-row');
-				const jcol = e.target.getAttribute('data-col'); 
-				const granlig = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row');
-				const grancol = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col'); 
-				const orNicar = (tlig,tcol) => MMcar(granlig,grancol,tlig,tcol);
-				
-				if (document.getElementById("choixàmettreenhaut")) {
-					if (document.getElementById("choixàmettreenhaut").checked) {
-						const lign = parseInt(granlig) + 1; // 2 et 1
-						const colo = parseInt(grancol) + 1;
-						const vale = e.target.innerHTML;
-						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
-						if (!(isNaN(vale))) {
-							cible.value = vale; 
-							// document.getElementById("tesfoot") ? document.getElementById("tesfoot").dispatchEvent(new Event('click')) : true;
-							cible.dispatchEvent(new Event('ctop')); 
-						};
-				}}; 
-						e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
-					tr.childNodes.forEach(tdd => {
+				const carolign = (e) => { // 3 et 1... à la base
+					const ilig = e.target.getAttribute('data-row');
+					const jcol = e.target.getAttribute('data-col'); 
+					const granlig = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row');
+					const grancol = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col'); 
+					const orNicar = (tlig,tcol) => MMcar(granlig,grancol,tlig,tcol);
+					e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
+						tr.childNodes.forEach(tdd => {
 
-						if (tdd.childNodes[0].childNodes[1]!=null) {
+							/* if (tdd.childNodes[0].childNodes[1]!=null) {
+								for(let minii=0; minii<3;minii++){ 
+								for(let minij=0; minij<3;minij++){ 
+								 if (ilig==minii&&jcol==minij ) {
+								tdd.childNodes[0].childNodes[1].childNodes[minii].childNodes[minij].classList.add("blur");
+							}}} }; */
+
+							if ((tdd.childNodes[0].childNodes[1]!=null) && (tdd.getAttribute('data-row') == granlig || tdd.getAttribute('data-col') == grancol || orNicar(tdd.getAttribute('data-row'),tdd.getAttribute('data-col')) )){
+
+								tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.remove("blur");
+								} });
+					});
+				}; 
+
+				const casecarolign = (e) => { // 2 et 3 bonus
+					const ilig = e.target.getAttribute('data-row');
+					const jcol = e.target.getAttribute('data-col'); 
+					const granlig = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row');
+					const grancol = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col'); 
+					const orNicar = (tlig,tcol) => MMcar(granlig,grancol,tlig,tcol);
+					e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
+						tr.childNodes.forEach(tdd => {
+
+							/* if (tdd.childNodes[0].childNodes[1]!=null) {
+								for(let minii=0; minii<3;minii++){ 
+								for(let minij=0; minij<3;minij++){ 
+								 // if (ilig==minii&&jcol==minij ) {
+								tdd.childNodes[0].childNodes[1].childNodes[minii].childNodes[minij].classList.add("blur");
+							}}} //}; */
+
+							if ((tdd.childNodes[0].childNodes[1]!=null) && (tdd.getAttribute('data-row') == granlig || tdd.getAttribute('data-col') == grancol || orNicar(tdd.getAttribute('data-row'),tdd.getAttribute('data-col')) )){
+								tdd.childNodes[0].childNodes[1].childNodes.forEach(ligne => {
+									ligne.childNodes.forEach(colon => {
+									colon.classList.remove("blur");
+								  });
+								}); 
+							} });
+					});
+				}; 
+				
+				const tousleségalit = (e) => {
+					const ilig = e.target.getAttribute('data-row');
+					const jcol = e.target.getAttribute('data-col'); 
+					// if (document.getElementById("choixseul")) {
+						// if (!(document.getElementById("choixseul").checked)) {		
+							e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
+									tr.childNodes.forEach(tdd => {
+										if (tdd.childNodes[0].childNodes[1]!=null){
+											tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.toggle("blur");
+									}});
+								});		
+						// } else {
+						// e.target.classList.toggle("blur")}}; // fin de "choixseul"
+				};
+
+				const justeunecase = (tdmini) => { // 2 et 3
+				justeremonte(tdmini);
+				tdmini.forEach(td => {
+					td.addEventListener('click', (e) => {		
+					if (document.getElementById("caroligne")) {
+						if (document.getElementById("caroligne").checked) {	
+							casecarolign(e);
+						} else {
+						e.target.parentElement.parentElement.childNodes.forEach(ligne => {
+						  ligne.childNodes.forEach(colon => {
+							colon.classList.toggle("blur");
+						  });
+						}); 
+					}} });	
+				}) };
+				
+				const tousleségalitios = (tdmini) => { // 2 et 1
+				tdmini.forEach(td => {
+					td.addEventListener('click', (e) => {
+						"""*(somme ? raw"""if (document.getElementById("caroligne")) {
+							if (document.getElementById("caroligne").checked) {	
+								carolign(e);
+							} else {
+								tousleségalit(e) }};
+						""" : raw"""tousleségalit(e); """)*raw"""
+				})}) };
+				
+				const carolignios = (tdmini) => { // 3 et 1
+				justeremonte(tdmini);
+				tdmini.forEach(td => {
+					td.addEventListener('click', (e) => {
+					if (document.getElementById("caroligne")) {
+						if (document.getElementById("caroligne").checked) {
+							carolign(e);
+						} else {
+						e.target.classList.toggle("blur")}}; // fin de "choixseul"
+				}) }) }; 
+				
+				const touteffacer = (tdbleus) => {
+					tdbleus.forEach(tdbleu => {
+						tdbleu.addEventListener('click', (e) => {
+							var grantb = e.target.parentElement.parentElement;
+							for(let grani=0; grani<9;grani++){ 
+							for(let granj=0; granj<9;granj++){ 
+							 if (grantb.childNodes[grani].childNodes[granj].childNodes[0].childNodes[1]!=null) {
 							for(let minii=0; minii<3;minii++){ 
 							for(let minij=0; minij<3;minij++){ 
-							 if (ilig==minii&&jcol==minij ) {
-							tdd.childNodes[0].childNodes[1].childNodes[minii].childNodes[minij].classList.add("blur");
-						}}} };
-
-						if ((tdd.childNodes[0].childNodes[1]!=null) && (tdd.getAttribute('data-row') == granlig || tdd.getAttribute('data-col') == grancol || orNicar(tdd.getAttribute('data-row'),tdd.getAttribute('data-col')) )){
-
-							tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.toggle("blur");
-							} });
-				});		
-			}); """))*raw"""
-	
-		});	""")*raw"""
+							grantb.childNodes[grani].childNodes[granj].childNodes[0].childNodes[1].childNodes[minii].childNodes[minij].classList.add("blur");
+							
+							}} } }};
+						});
+					}); };
+				
+				
+				
+		let tdmini = _sudoku.querySelectorAll('td.mini'); 
+		// /parCase = toutVoir # bidouille à changer ? /toutVoir = true /// plus haut
+  		"""*(toutVoir && parCase ? raw"""justeremonte(tdmini);// 3 et 2+3 
+			""" : raw""" let tdbleus = _sudoku.querySelectorAll('td.grandbleu'); touteffacer(tdbleus); 
+					"""*(parCase ? raw"""justeunecase(tdmini);  // 2 et 3
+									""" : (toutVoir ? raw"""tousleségalitios(tdmini); // 3 et 1 + 2 et 2
+														""" : raw"""carolignios(tdmini); // 2 et 1
+			""")))*raw"""
 				
 		  return _sudoku;
 
@@ -768,7 +845,7 @@ document.getElementById("va_et_vient").addEventListener("click", làhaut);
 		</script>""")
 	end
 	htmlsp = htmlSudokuPropal ## mini version
-	htmatp = htmlSudokuPropal ∘ matriceàlisteJS ## mini version
+	htmatp = htmlSudokuPropal ∘ matriceàlisteJS ## mini version 
 	
 	interval(mini,maxi,val) = HTML("<input 
         type='range' min='$(mini)' max='$(maxi)' value='$(val)' oninput='this.nextElementSibling.value=this.value'><output> $(val)</output>")
@@ -1228,7 +1305,7 @@ end; nothing; # stylélàbasavecbonus! ## voir juste dans la cellule #Bonus au d
 # Voilà ! fin de la plupart du code de ce programme Plutoku.jl
 
 # ╔═╡ 96d2d3e0-2133-11eb-3f8b-7350f4cda025
-md"# Résoudre un Sudoku par Alexis $cool" # v1.8.4 vendredi 10/09/2021 🎶
+md"# Résoudre un Sudoku par Alexis $cool" # v1.8.5 mardi 11/01/2022 🎉
 
 #= Pour la vue HTML et le style CSS, cela est fortement inspiré de https://github.com/Pocket-titan/DarkMode et pour le sudoku https://observablehq.com/@filipermlh/ia-sudoku-ple1
 Pour basculer entre plusieurs champs automatiquement via JavaScript, merci à https://stackoverflow.com/a/15595732 , https://stackoverflow.com/a/44213036 et autres
@@ -1253,14 +1330,14 @@ end
 
 # ╔═╡ a038b5b0-23a1-11eb-021d-ef7de773ef0e
 begin
-	viderOupas isa Missing ? viderSudoku = 2 : (viderSudoku = (viderOupas == "Vider le sudoku initial" ? 1 : 2))
+	choixSudoku = (!isa(viderOupas, String) || viderOupas != "Vider le sudoku initial" 		  ?  2  :  1  )
 	SudokuInitial = HTML("""
 <script>
 // stylélàbasavecbonus!
 
 const premier = JSON.stringify( $(SudokuMémo[1]) );
 const deuxième = JSON.stringify( $(SudokuMémo[2]) );
-const defaultFixedValues = $(SudokuMémo[viderSudoku])""" * raw"""
+const defaultFixedValues = $(SudokuMémo[choixSudoku])""" * raw"""
 			
 // const defaultFixedValues = [[0,0,0,7,0,0,0,0,0],[1,0,0,0,0,0,0,0,0],[0,0,0,4,3,0,2,0,0],[0,0,0,0,0,0,0,0,6],[0,0,0,5,0,9,0,0,0],[0,0,0,0,0,0,4,1,8],[0,0,0,0,8,1,0,0,0],[0,0,2,0,0,0,0,5,0],[0,4,0,0,0,0,3,0,0]];
 		
@@ -1498,7 +1575,12 @@ window.sudokuViewReactiveValue = ({_sudoku:html, data}) => {
 
 return sudokuViewReactiveValue(createSudokuHtml(defaultFixedValues));
 </script>""")
-	@bind bindJSudoku SudokuInitial
+	#= if !@isdefined(bindJSudoku) #### Ne fonctionne pas bien
+		# global bindJSudoku = [[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,1,2,3,4,5,0,0,0],[0,2,0,0,3,0,6,0,0],[0,3,4,5,6,0,0,7,0],[0,6,0,0,7,0,8,0,0],[0,7,0,0,8,9,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]]
+		global bindJSudoku = deepcopy(SudokuMémo[3])
+	end =#
+	# @bind bindJSudoku BondJamesBond(SudokuInitial, deepcopy(SudokuMémo[3]))
+	@bind bindJSudoku BondJamesBond(SudokuInitial, [[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,1,2,3,4,5,0,0,0],[0,2,0,0,3,0,6,0,0],[0,3,4,5,6,0,0,7,0],[0,6,0,0,7,0,8,0,0],[0,7,0,0,8,9,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]])
 end
 
 # ╔═╡ 7cce8f50-2469-11eb-058a-099e8f6e3103
@@ -1509,64 +1591,66 @@ end
 
 # ╔═╡ bba0b550-2784-11eb-2f58-6bca9b1260d0
 #=
-md"""$(@bind voirOuPas puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"Pour toutes les cases, voir les nombres…"; idPuces="CacherRésultat") ) 
+md"""$(@bind voirOuPas BondJamesBond(puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"], "Pour toutes les cases, voir les nombres…; idPuces="CacherRésultat"), "Pour toutes les cases, voir les nombres…") ) 
 
 $(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
                                                 
-$(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…de la solution 🚩"; idPuces="PossiblesEtSolution", classe="" ) ) =#
-md"""$(@bind voirOuPas puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"🤫 Cachée"; idPuces="CacherRésultat") ) 
+$(@bind PropalOuSoluce BondJamesBond(puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…par case 🔢"; idPuces="PossiblesEtSolution", classe="pasla" ), "…par case 🔢") )  =# ## Si besoin pour tester
+md"""$(@bind voirOuPas BondJamesBond(puces(["🤫 Cachée", "En touchant, entrevoir les nombres…","Pour toutes les cases, voir les nombres…"],"🤫 Cachée"; idPuces="CacherRésultat"), "🤫 Cachée") ) 
 
 $(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
                                                 
-$(@bind PropalOuSoluce puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…par chiffre possible"; idPuces="PossiblesEtSolution", classe="pasla" ) )
+$(@bind PropalOuSoluce BondJamesBond(puces(["…par chiffre possible", "…de possibilités (min ✔)","…par case 🔢","…de la solution 🚩"],"…par chiffre possible"; idPuces="PossiblesEtSolution", classe="pasla" ), "…par chiffre possible") ) 
 
-$(html"<div id='puchoixàmettreenhaut' class='pasla' style='margin-top: 10px;user-select: none;text-align: center;font-style: italic;font-weight: bold;color: #777'><input type='checkbox' id='choixàmettreenhaut' name='choixàmettreenhaut' ><label for='choixàmettreenhaut' style='margin-left: 2px;'>Cocher ici, puis toucher le chiffre à mettre dans le sudoku initial</label></div>")"""
+$(html"<div id='divers' class='pasla' style='margin-top: 8px;margin-left: 1%;user-select: none;font-style: italic;font-weight: bold;color: #777'><span id='pucaroligne'><input type='checkbox' id='caroligne' name='caroligne' ><label for='caroligne' style='margin-left: 2px;'>Caroligne ⚔</label></span>")
+$(html"<span id='puchoixàmettreenhaut' style='margin-left: 5%'><input type='checkbox' id='choixàmettreenhaut' name='choixàmettreenhaut'> <label for='choixàmettreenhaut' style='margin-left: 2px;'>Cocher ici, puis toucher le chiffre à mettre dans le sudoku initial</label></span></div>")"""
 
 # ╔═╡ b2cd0310-2663-11eb-11d4-49c8ce689142
-if bindJSudoku isa Missing
-	sudokuSolutionVue = SudokuMémo[3] # Aucune erreur perdant le calcul...
-	md"**Statistiques :** il a fallu faire **XX choix** et **YY tours** (si on savait à l'avance les bons choix), ce programme ayant fait **ZZ tours** au total en α essai pour résoudre ce sudoku !!! 😃" # Texte bidon le temps que cela calcule ;)
-else 
+begin 
 	SudokuMémo[3] = bindJSudoku # Pour que le sudoku en cours (initial modifié) reste en mémoire si besoin -> Le sudoku initial ;) 
-	sudokuSolution = résoutSudoku(bindJSudoku) # normal
+	sudokuSolution = résoutSudoku(bindJSudoku) # calcule la solution
 	# sudokuSolution = résoutSudoku(bindJSudoku; nbToursMax=0) ## Pour ralentir 🐌🐢
 	sudokuSolutionVue = sudokuSolution[1]
-	sudokuSolution[2] # La petite explication seule
-end
-# using BenchmarkTools
-# @benchmark résoutSudoku(bindJSudoku)
+	sudokuSolution[2] # La petite explication seule : "il a fallu XX choix..."
+end ### mesure avec ## using BenchmarkTools # @benchmark résoutSudoku(bindJSudoku)
 
 # ╔═╡ 4c810c30-239f-11eb-09b6-cdc93fb56d2c
 begin
-	if bindJSudoku isa Missing ### || valeur isa Missing
-		maintenant = SudokuMémo[3]
-	else maintenant = bindJSudoku ### matriceàlisteJS(histoire[valeur])
-	end
-	if voirOuPas isa Missing || voirOuPas=="🤫 Cachée" # || bindJSudoku isa Missing || valeur isa Missing
+	if !isa(voirOuPas, String) || voirOuPas == "🤫 Cachée"
 		md"""$(sudokuSolutionVue isa String ? md"##### 🤐 Cela est caché pour le moment comme demandé ⚡"  : md"##### 🤐 Cela est caché pour le moment comme demandé")
 $(sudokuSolutionVue isa String ? md"Pas de bol ! Cf. la remarque en gras plus bas. Si besoin, cocher `🤫 Cachée` pour revoir ceci."  : md"Bonne chance ! Si besoin, cocher `🤫 Cachée` pour revoir ce message.")
 
-Pour information, `En touchant, entrevoir les nombres…` permet en cliquant de faire apparaître (et disparaître via les chiffres bleus) le contenu choisi, comme un coup de pouce. De plus : 
+Pour information, `En touchant, entrevoir les nombres…` permet en cliquant de faire apparaître (ou tout disparaître via les chiffres bleus) le contenu choisi, comme un coup de pouce : 
 
-   - En cliquant précisément dans une case, sur le 1 (en haut à gauche) au 9 (en bas à droite; le chiffre 5 est donc au milieu), les nombres `…par chiffre possible` permettent de voir si le chiffre est possible dans la case et ses cases liées (sur sa ligne, sa colonne et son carré).
+   - Les nombres `…par chiffre possible` permettent de voir si le chiffre est possible en cliquant précisément dans une case : du haut à gauche pour le 1, au 9 en bas à droite ; le chiffre 5 est donc au centre.
    - Chaque case à un seul nombre `…de possibilités (min ✔)` de 1 à 9 (de façon similaire, de haut en bas dans la case). Celles ayant le moins de possibilités ont ✔ en bas à droite (à la place du 9).
-   - Les nombres `…par case 🔢` permettent de voir la liste complète des chiffres possibles par case.
+   - Les nombres `…par case 🔢` permettent de voir la liste complète des chiffres possibles par case, bref les chiffres possibles de toute la case.
    - Seuls les nombres `…de la solution 🚩` montrent (un ou) des chiffres du sudoku fini.
 
-Bien sûr, il y a pour chaque catégorie : 
-`Pour toutes les cases, voir les nombres…` pour tout voir."""
+De plus, `Pour toutes les cases, voir les nombres…` de la sous-catégorie choisie.
+		
+Enfin, il y a deux options :  
+`Caroligne ⚔` monte les cases liées (donc son carré, sa colonne, sa ligne) ; 
+et on peut `Cocher ici, puis toucher le chiffre à mettre dans le sudoku initial`.
+"""
 	elseif PropalOuSoluce == "…de la solution 🚩" # || PropalOuSoluce isa Missing
-		htmlSudoku(sudokuSolutionVue,maintenant ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les nombres…") )
-	else htmlSudokuPropal(maintenant,sudokuSolutionVue ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les nombres…"), parCase= (PropalOuSoluce =="…par case 🔢"), somme= (PropalOuSoluce=="…de possibilités (min ✔)"))
+		htmlSudoku(sudokuSolutionVue,bindJSudoku ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les nombres…") )
+	else htmlSudokuPropal(bindJSudoku,sudokuSolutionVue ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les nombres…"), parCase= (PropalOuSoluce =="…par case 🔢"), somme= (PropalOuSoluce=="…de possibilités (min ✔)"))
 	end
 end
 
 # ╔═╡ e986c400-60e6-11eb-1b57-97ba3089c8c1
 stylélàbasavecbonus = HTML(raw"""<script>
 const plutôtnoir = `<style>
+/*///////////  Pour Pluto.jl  (à nettoyer un jour...) //////////////*/
 
-/*///////////  Pour Pluto.jl  //////////////*/
-
+.cm-cursor {
+    border-left: 1.2px solid white !important;
+}
+::selection {
+  color: #93ccff;
+  // background: yellow !important; // ne fonctionne pas :'( // pluto v0.17.1
+}
 	body {
 		// background-color: hsl(0, 0%, 15%);
     	background-color: hsl(0, 0%, 0%);
@@ -1581,6 +1665,10 @@ const plutôtnoir = `<style>
 	}
 	body > header * {
 		color: white;
+	}
+	.cm-editor .cm-placeholder {
+    	color: #cbcbcb;
+// nouveau v0.17 :'( //////////////////////////////////////////   Enter cell code...
 	}
 	preamble {
 		filter: invert(1);
@@ -1812,8 +1900,8 @@ td.miniblur{
 }
 td.norbleu{
 	font-weight: bold;
-	color:#5668a4; /* noir */
-	// color:#0064ff;
+	color:#5668a4 !important; /* noir */
+	// color:#0064ff !important;
 }
 td.grandbleu{
 	font-weight: bold;
@@ -1983,8 +2071,8 @@ td.miniblur{
 }
 td.norbleu{
 	font-weight: bold;
-	// color:#5668a4; /* noir */
-	color:#0064ff;
+	// color:#5668a4 !important; /* noir */
+	color:#0064ff !important;
 }
 td.grandbleu{
 	font-weight: bold;
@@ -2038,8 +2126,19 @@ pluto-output.rich_output code {
 tr#lignenonvisible {
 	border-top: medium solid white !important;
 }
-</style>`;
-var plutôtstyle = html`<span id="stylebn">${plutôtnoir}</span>`;
+</style>`; 
+//var plutôtstyle = html`<span id="stylebn">${plutôtnoir}</span>`;
+const obscur = window.matchMedia('(prefers-color-scheme: dark)').matches;
+var plutôtstyle = html`<span id="stylebn">${obscur ? plutôtnoir : plutôtblanc}</span>`;
+var BN1 = document.getElementById("BN");
+var BoN1 = document.getElementById("BoN");
+if (obscur) { 
+	BN1.innerHTML = "😎";
+	BoN1.innerHTML = "😎";
+} else {
+	BN1.innerHTML = "😉";
+	BoN1.innerHTML = "😉";
+};
 function noiroublanc() { 
 	var stylebn = document.getElementById("stylebn");
 	var cestblanc = document.getElementById("cestblanc");
@@ -2061,7 +2160,37 @@ document.getElementById("BoN") ? document.getElementById("BoN").addEventListener
 document.getElementById("Bonus").addEventListener("click", noiroublanc);
 return plutôtstyle;
 </script>"""); pourvoirplutôt = HTML(raw"""<script>
-const plutôtstylé = `<link rel="stylesheet" href="./hide-ui.css" id="cachémoiplutôt"><style>
+// const plutôtstylé = `<link rel="stylesheet" href="./hide-ui.css"><style id="cachémoiplutôt">
+const plutôtstylé = `<style id="cachémoiplutôt">
+main {
+    // margin-top: 20px;
+    cursor: auto;
+	margin: 0 !important;
+    padding: 0 !important;
+    // padding-bottom: 4rem !important;
+}
+
+  preamble,
+  pluto-cell:not(.show_input) > pluto-runarea .runcell,
+body > header,
+preamble > button,
+pluto-cell > button,
+pluto-input > button,
+footer,
+pluto-runarea,
+#helpbox-wrapper {
+    display: none !important;
+}
+	
+  pluto-shoulder {
+	visibility:hidden;
+}
+  pluto-cell:not(.show_input) > pluto-runarea,
+pluto-cell > pluto-runarea {
+    display: block !important;
+	background-color: unset;
+}
+
 @media screen and (any-pointer: fine) {
     pluto-cell > pluto-runarea {
         // opacity: 0.5;
@@ -2081,31 +2210,6 @@ const plutôtstylé = `<link rel="stylesheet" href="./hide-ui.css" id="cachémoi
   //      transition: opacity 0.05s ease-in-out;
   //  } 
 }
-
-pluto-cell:not(.show_input) > pluto-runarea .runcell {
-    display: none !important;
-}
-pluto-cell:not(.show_input) > pluto-runarea,
-pluto-cell > pluto-runarea {
-    display: block !important;
-	background-color: unset;
-}
-preamble {
-    display: none !important;
-}
-main {
-	margin: 0 !important;
-    padding: 0 !important;
-    // padding-bottom: 4rem !important;
-}
-pluto-shoulder {
-	// display: block !important;
-	visibility:hidden;
-    // left: -22px;
-	// width: 0;
-	// // width: 22px;
-	// opacity: 0;
-}
 </style>`;
 var stylécaché = html`<span id="stylé">${plutôtstylé}</span>`;
 // var stylécaché = html`<span id="stylé"></span>`; // FAUX bidouille à supprimer ////
@@ -2120,7 +2224,9 @@ function styléoupas() {
 };
 document.getElementById("plutot").addEventListener("click", styléoupas);
 return stylécaché;
-</script>"""); calepin = HTML(raw"<script>return html`<a href=${JSON.stringify(window.location.href).search('.html')>1 ? JSON.stringify(window.location.href).replace('html', 'jl') : JSON.stringify(window.location.href).replace('edit', 'notebookfile')} target='_blank' download>${document.title.replace('🎈 ','').replace('— Pluto.jl','')}</a>`;</script>"); pourgarderletemps = HTML(raw"""<script>
+</script>"""); calepin = HTML(raw"<script>return html`<a href=${document.URL.search('.html')>1 ? document.URL.replace('html', 'jl') : document.URL.replace('edit', 'notebookfile')} target='_blank' download>${document.title.replace('🎈 ','').replace('— Pluto.jl','')}</a>`;</script>"); caleweb = HTML(raw"<script>return html`<a href=${document.URL.search('.html')>1 ? document.URL : document.URL.replace('edit', 'notebookexport')} target='_blank' style='font-weight: normal;' download>HTML</a>`;</script>"); plutoojl = HTML(raw"<script>if (document.URL.search('.html')>1) {
+	return html`<em>Pluto.jl</em>`
+	} else { return html`<a href='./' target='_blank' style='font-weight: normal;'><em>Pluto</em></a><em>.jl</em>`}</script>"); pourgarderletemps = HTML(raw"""<script>
 	function générateurDeCodeClé() {
 	  var copyText = document.getElementById("pour-définir-le-sudoku-initial");
 	  var pastext = document.getElementById("sudokincipit");
@@ -2161,7 +2267,7 @@ $(html"<details open><summary style='list-style: none;'><h6 id='BonusAstuces' st
    3. Il est possible de **remonter la solution** au lieu du sudoku modifiable en cliquant sur l'entête [Sudoku initial ⤴ (modifiable) et sa solution](#va_et_vient). On peut ensuite l'enlever pour revenir au sudoku modifiable, ↪ en cliquant sur le texte sous la solution remontée. 
    4. Il est possible de bouger avec les flèches, aller à la ligne suivante automatiquement (à la _[Snake](https://www.google.com/search?q=Snake)_). Il y a aussi des raccourcis, comme `H` = haut, `V` ou `G` = gauche, `D` `J` `N` = droite, `B` = bas. Ni besoin de pavé numérique, ni d'appuyer sur _Majuscule_, les touches suivantes sont idendiques `1234 567 890` = `AZER TYU IOP` = `&é"' (-è _çà`. 
    5. Pour information, la fonction **vieuxSudoku!()** ou **vieux()** sans paramètre permet de générer un sudoku aléatoire. En mettant uniquement un nombre en paramètre, par exemple **vieuxSudoku!(62)** : ce sera le nombre de cases vides du sudoku aléatoire construit. Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!(1:81)** : un nombre aléatoire dans cet intervalle sera utilisé. Pour tous ces sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un neuf. 
-   6. Ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))) est observable, d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci 📝🤓'>") pour basculer l'interface de _Pluto.jl_, puis en cliquant sur l'œil 👁 à côté de chaque cellule. Il est aussi possible de télécharger ce calepin $calepin 
+   6. Ce programme en _Julia_ ([cf. wikipédia](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation))) est observable, d'abord en cliquant sur $(html"<input type=button id='plutot' value='Ceci 📝🤓'>") pour basculer l'interface de $plutoojl, puis en cliquant sur l'œil 👁 à côté de chaque cellule. Il est aussi possible de télécharger ce calepin $calepin ou en $caleweb
    7. Enfin, passer en style **sombre** ou **lumineux** en cliquant sur [**Bonus**](#Bonus) ou $coool [tout en haut](#BN) :) 
 $(html"</details>")
 $pourvoirplutôt 
