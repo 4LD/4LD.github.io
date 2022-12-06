@@ -370,7 +370,7 @@ begin
 		vieillecopie = (copie ? copie.cloneNode(true) : tabl);
 		tabl.id = 'copiefinie';
 		tabl.classList.add('sudokool');
-		tabl.innerHTML = (copie ? copie.innerHTML : `<thead id='taide'><tr><td style='text-align: center;width: 340px;padding: 26px 0;'>Rien à montrer, c'est coché  <code>🤫 Cachée</code></td></tr></thead>`) + `<tfoot id='tesfoot'><tr id='lignenonvisible'><th colspan='9'>↪ Cliquer ici pour revenir au sudoku modifiable</th></tr></tfoot>`;
+		tabl.innerHTML = (copie ? copie.innerHTML : `<thead id='taide'><tr><td style='text-align: center;width: 340px;padding: 26px 0;border: 0;'>Rien à montrer, c'est coché  <code>🤫 Cachée</code></td></tr></thead>`) + `<tfoot id='tesfoot'><tr id='lignenonvisible'><th colspan='9'>↪ Cliquer ici pour revenir au sudoku modifiable</th></tr></tfoot>`;
 		père.appendChild(tabl);
 		document.getElementById('taide')?.addEventListener('click', déjàvu);
 		document.getElementById('tesfoot').addEventListener('click', déjàvu);
@@ -1464,7 +1464,16 @@ end
 
 # ╔═╡ a2345678-7654-3210-b010-123456789009
 stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est dans la cellule cachée tout en bas, juste après la cellule vide _`Enter cell code...`_" =# Docs.HTML(raw"""<style> /* Pour les boutons et 'code' */
-	input[type="button" i] {color: black; /*/ souci Opéra et Chrome dark side /*/}
+	input[type="button" i] {
+		background-color: #aaa;
+		color: black;
+		border: 2px outset #bbb;
+		border-radius: 2px;}
+	input[type="button" i]:hover,
+	input[type="button" i]:active{
+		background-color: #777;
+		color: white;
+		border: 2px solid #777;}
 	pluto-output.rich_output code {border: solid 1px #9b9f9f; /*/ contour fin /*/}
 /* autres bidouilles */
 	#taide, #tesfoot, #va_et_vient {user-select: none;}
