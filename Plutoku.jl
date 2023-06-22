@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.16
+# v0.19.26
 
 using Markdown
 using InteractiveUtils
@@ -14,13 +14,14 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ a2345678-7654-3210-b001-123456789011
+# ╔═╡ abde0001-0011-0001-0011-0001dabe0011
 begin 
 	# @bind bindJSudoku Sudini # et son javascript est inclus au plus haut
 	# stylélàbasavecbonus! ## voir juste dans la cellule #Bonus au dessus ↑
-	const àcorriger = "😜 Merci de corriger le Sudoku", md"""##### 😜 Merci de revoir le Sudoku modifiable, il n'est pas conforme : 
+	const plutôtvoir = false # Plutôt voir l'interface de Pluto.jl (false → cachée)
+	const àcorriger = "😜 Merci de corriger le Sudoku", md"""###### 😜 Merci de revoir le Sudoku modifiable, il n'est pas conforme : 
 		En effet, il doit y avoir **un chiffre en double** au moins sur une ligne ou colonne ou carré 😄"""
-	const impossible = "🧐 Sudoku faux et impossible", md"""##### 🧐 Sudoku faux et impossible à résoudre :
+	const impossible = "🧐 Sudoku faux et impossible", md"""###### 🧐 Sudoku faux et impossible à résoudre :
 		Si ce n'est pas le cas, revérifier le Sudoku modifiable, car celui-ci n'a pas de solution"""
 	toutestbienquifinitbien(mS, nbChoixfait, nbToursTotal) = matriceàlisteJS(mS), md"**Statistiques :** ce programme fait **$nbChoixfait choix** et _$nbToursTotal $((nbToursTotal>1) ? :tours : :tour)_ pour résoudre ce sudoku"
 	const footix = "document.getElementById(\"tesfoot\")?.dispatchEvent(new Event(\"click\"))"
@@ -28,19 +29,19 @@ begin
 	const set19 = Set(1:9) # Pour ne pas le recalculer à chaque fois
 	const cool = html"<span id='BN' style='user-select: none;'>😎</span>"
 	jsvd() = fill(fill(0,9),9) # JSvide ou JCVD ^^ pseudo const
+	adini() = [[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,1,2,3,4,5,0,0,0],[0,2,0,0,3,0,6,0,0],[0,3,4,5,6,0,0,7,0],[0,6,0,0,7,0,8,0,0],[0,7,0,0,8,9,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]] # Sudoku avec deux lettres… 
 	using Random: shuffle! # Astuce pour être encore plus rapide = Fast & Furious
-	## shuffle!(x) = x ## Si besoin, mais... Everyday I shuffling ! (dixit LMFAO)
+	## shuffle!(x) = x ## Si besoin, mais… Everyday I shuffling ! (dixit LMFAO)
 	
-	struct BondJamesBond ## BondDefault(element, default) ### pour Base.get() et @bind
-		oo7 # element 	 			 ### Bond (à binder)
-		vodkaMartini # default 		 ### un défaut ^^
+	struct BondJamesBond # BondDefault(element, default) ## pour Base.get() et @bind
+		oo7 # element 	 		## Bond (à binder)
+		vodkaMartini # default 	## un défaut ^^
 	end # from https://github.com/fonsp/pluto-on-binder/pull/11
 	Base.show(io::IO, m::MIME"text/html", bd::BondJamesBond) = 
 		Base.show(io,m, bd.oo7)
-	Base.get(bd::BondJamesBond) = bd.vodkaMartini 
+	Base.get(bd::BondJamesBond) = bd.vodkaMartini # évite Doctor No(thing ou missing)
 
-	SudokuMémo = pushfirst!(repeat([[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,1,2,3,4,5,0,0,0],[0,2,0,0,3,0,6,0,0],[0,3,4,5,6,0,0,7,0],[0,6,0,0,7,0,8,0,0],[0,7,0,0,8,9,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0]]], 3), 
-		jsvd()) # En triple pour garder mes initial(e)s ^^
+	SudokuMémo = pushfirst!(repeat([adini()], 3), jsvd()) # garder mes initial(e)s ^^
 	listeJSàmatrice(JSudoku::Vector{Vector{Int}}) = hcat(JSudoku...) #' en pinaillant
 		jsm = listeJSàmatrice ## mini version
 	matriceàlisteJS(mat,d=9) = [mat[:,i] for i in 1:d] #I will be back! ## mat3 aussi
@@ -60,13 +61,13 @@ begin
 
 	function vérifSudokuBon(mat::Array{Int,2}) # Vérifie si le sudoku est réglo
 		lescarrés = listecarré(mat)
-		for x in 1:9 # Pour tous les chiffres de 1 à 9...
-			for i in 1:9 # ...est-il en doublon dans une ligne ou une colonne ?
+		for x in 1:9 # Pour tous les chiffres de 1 à 9…
+			for i in 1:9 # …est-il en doublon dans une ligne ou une colonne ?
 				if count(==(x), mat[i,:])>1 || count(==(x), mat[:,i])>1
 					return false
 				end
 			end
-			for c in lescarrés # ...est-il en doublon dans un carré ?
+			for c in lescarrés # …est-il en doublon dans un carré ?
 				if count(==(x), c)>1
 					return false
 				end
@@ -74,7 +75,7 @@ begin
 		end
 		return true # Le sudoku semble conforme (mais il peut être impossible)
 	end 
-	function sac!(n::Int, l::Int, k::Int, ii::UnitRange{Int}, jj::UnitRange{Int}, listepossibles::Set{Int}, fusibles::Dict{Int, Set{Int}}, dico::Dict{Int,Dict{Int,Int}}, dilo::Dict{Int,Dict{Int,Tuple{Int,UnitRange{Int},UnitRange{Int}} }}, diko::Dict{Int,Dict{Int,Int}}) # compte l'occurence d'un chiffre pour... cf. uniclk!
+	function sac!(n::Int, l::Int, k::Int, ii::UnitRange{Int}, jj::UnitRange{Int}, listepossibles::Set{Int}, fusibles::Dict{Int, Set{Int}}, dico::Dict{Int,Dict{Int,Int}}, dilo::Dict{Int,Dict{Int,Tuple{Int,UnitRange{Int},UnitRange{Int}} }}, diko::Dict{Int,Dict{Int,Int}}) # compte l'occurence d'un chiffre pour… (uniclk!)
 	 # pour ligne et colonne
 	 get!(dico, n, Dict{Int,Int}() ) # dico : posibilités par colonne/ligne
 	 get!(dilo, n, Dict{Int,Tuple{Int,UnitRange{Int},UnitRange{Int}} }() ) # dilo : ligne/colonne ♻
@@ -112,17 +113,21 @@ begin
 		end
 	 end
 	end
-	function uniclk!(diclo::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int},UnitRange{Int}}}} ,dicco::Dict{Int, Dict{Int,Int}}, dicko::Dict{Int, Dict{Int,Int}}, dillo::Dict{Int, Dict{Int,Int}}, dilco::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int},UnitRange{Int}}}}, dilko::Dict{Int, Dict{Int,Int}}, diklo::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int}}}}, dikco::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int}}}}, dikko::Dict{Int, Dict{Int,Int}}, mat::Array{Int,2}, dimp::Dict{Tuple{Int,Int}, Set{Int}}, dicorézlig::Dict{Int, Set{Int}}, dicorézcol::Dict{Int, Set{Int}}, dicorézcar::Dict{Int, Set{Tuple{Int,Int}}}, lesZérosàSuppr::Set{Tuple{Int,Int,Int,UnitRange{Int},UnitRange{Int}}}, çaNavancePas::Bool) #... voir si un chiffre est seul (ou uniquement sur une même ligne, col...). Car par exemple, s'il apparaît une seule fois sur la ligne : c'est qu'il ne peut qu'être là ^^
+	function uniclk!(diclo::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int},UnitRange{Int}}}} ,dicco::Dict{Int, Dict{Int,Int}}, dicko::Dict{Int, Dict{Int,Int}}, dillo::Dict{Int, Dict{Int,Int}}, dilco::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int},UnitRange{Int}}}}, dilko::Dict{Int, Dict{Int,Int}}, diklo::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int}}}}, dikco::Dict{Int, Dict{Int,Tuple{Int,UnitRange{Int}}}}, dikko::Dict{Int, Dict{Int,Int}}, mat::Array{Int,2}, dimp::Dict{Tuple{Int,Int}, Set{Int}}, dicorézlig::Dict{Int, Set{Int}}, dicorézcol::Dict{Int, Set{Int}}, dicorézcar::Dict{Int, Set{Tuple{Int,Int}}}, lesZérosàSuppr::Set{Tuple{Int,Int,Int,UnitRange{Int},UnitRange{Int}}}, çaNavancePas::Bool) #… voir si un chiffre est seul (ou uniquement sur une même ligne, col…). Car par exemple, s'il apparaît une seule fois sur la ligne : c'est qu'il ne peut qu'être là ^^
 	# Autres exemple, si dans une ligne, il n'y a d'occurence que dans un des 3 carré, il ne pourra pas être ailleurs dans le carré.
 	 for (j,dc) in dicco # pour les colonnes
 		for (n,v) in dc
 			if v == 1
-				mat[diclo[j][n][1],j] = n
-				push!(lesZérosàSuppr, (diclo[j][n][1], j, dicko[j][n], diclo[j][n][2], diclo[j][n][3]))
-				delete!(dicorézlig[diclo[j][n][1]], j)
-				delete!(dicorézcol[j], diclo[j][n][1])
-				delete!(dicorézcar[dicko[j][n]], (diclo[j][n][1], j) )
-				haskey(dillo, diclo[j][n][1]) && delete!(dillo[diclo[j][n][1]], n)
+				i = diclo[j][n][1]
+				if n ∉ chiffrePossible(mat,i,j,get!(dimp,(i,j),Set{Int}() ))
+					return false # pas 3a bol ^^
+				end ## ou plutôt ## n ∉ simplechiffrePossible(mat,i,j) 
+				mat[i,j] = n
+				push!(lesZérosàSuppr, (i, j, dicko[j][n], diclo[j][n][2], diclo[j][n][3]))
+				delete!(dicorézlig[i], j)
+				delete!(dicorézcol[j], i)
+				delete!(dicorézcar[dicko[j][n]], (i, j) )
+				haskey(dillo, i) && delete!(dillo[i], n)
 				haskey(dikko, dicko[j][n]) && delete!(dikko[dicko[j][n]], n)
 				çaNavancePas = false # Car on a réussi à remplir
 			else 
@@ -135,12 +140,16 @@ begin
 	 for (i,dl) in dillo # pour les lignes
 		for (n,v) in dl
 			if v == 1
-				mat[i,dilco[i][n][1]] = n
-				push!(lesZérosàSuppr, (i, dilco[i][n][1], dilko[i][n], dilco[i][n][2], dilco[i][n][3]))
-				delete!(dicorézlig[i], dilco[i][n][1])
-				delete!(dicorézcol[dilco[i][n][1]], i)
-				delete!(dicorézcar[dilko[i][n]],(i, dilco[i][n][1]) )
-				# haskey(dicco,dico[i][n][1]) && delete!(dicco[dico[i][n][1]], n) #sio
+				j = dilco[i][n][1]
+				if n ∉ chiffrePossible(mat,i,j,get!(dimp,(i,j),Set{Int}() ))
+					return false # pas 3b bol ^^
+				end 
+				mat[i,j] = n
+				push!(lesZérosàSuppr, (i, j, dilko[i][n], dilco[i][n][2], dilco[i][n][3]))
+				delete!(dicorézlig[i], j)
+				delete!(dicorézcol[j], i)
+				delete!(dicorézcar[dilko[i][n]],(i, j) )
+				# haskey(dicco,dico[i][n][1]) && delete!(dicco[dico[i][n][1]], n)#sio
 				haskey(dikko,dilko[i][n]) && delete!(dikko[dilko[i][n]], n)
 				çaNavancePas = false # Car on a réussi à remplir
 			else 
@@ -153,13 +162,17 @@ begin
 	 for (k,dk) in dikko # pour les karré
 		for (n,v) in dk
 			if v == 1
-				mat[diklo[k][n][1],dikco[k][n][1]] = n
-				push!(lesZérosàSuppr, (diklo[k][n][1], dikco[k][n][1], k, dikco[k][n][2], diklo[k][n][2]))
-				delete!(dicorézlig[diklo[k][n][1]], dikco[k][n][1])
-				delete!(dicorézcol[dikco[k][n][1]], diklo[k][n][1])
-				delete!(dicorézcar[k], (diklo[k][n][1], dikco[k][n][1]) )
-				# haskey(dillo,dilo[k][n][1]) && delete!(dillo[dilo[k][n][1]], n) #sio
-				# haskey(dicco,dico[k][n][1]) && delete!(dicco[dico[k][n][1]], n) #rde
+				i,j = diklo[k][n][1],dikco[k][n][1]
+				if n ∉ chiffrePossible(mat,i,j,get!(dimp,(i,j),Set{Int}() ))
+					return false # pas 3c bol ^^
+				end 
+				mat[i,j] = n
+				push!(lesZérosàSuppr, (i,j, k, dikco[k][n][2], diklo[k][n][2]))
+				delete!(dicorézlig[i], j)
+				delete!(dicorézcol[j], i)
+				delete!(dicorézcar[k], (i, j) )
+				# haskey(dillo,dilo[k][n][1]) && delete!(dillo[dilo[k][n][1]], n)#sio
+				# haskey(dicco,dico[k][n][1]) && delete!(dicco[dico[k][n][1]], n)#rde
 				çaNavancePas = false # Car on a réussi à remplir
 			else 
 				if dikco[k][n][1] == 0 
@@ -182,13 +195,13 @@ begin
 			if v == 1
 				# (diclo[j][n][1],j,dicko[j][n],diclo[j][n][2],diclo[j][n][3])
 				i,k, ii,jj = diclo[j][n][1],dicko[j][n],diclo[j][n][2],diclo[j][n][3]
-				for iii in 1:9 # ...on retire sur la ligne et la colonne
+				for iii in 1:9 # …on retire sur la ligne et la colonne
 					get!(dimp,(i,iii),Set{Int}() )
 					get!(dimp,(iii,j),Set{Int}() )
 					iii != j && push!(dimp[i,iii],n)
 					iii != i && push!(dimp[iii,j],n)
 				end
-				for jjj in jj, iii in ii # ...et sur le carré
+				for jjj in jj, iii in ii # …et sur le carré
 					jjj != j && iii != i && push!(get!(dimp,(iii,jjj),Set{Int}() ),n)
 				end
 				haskey(dillo,diclo[j][n][1]) && delete!(dillo[diclo[j][n][1]], n)
@@ -206,16 +219,16 @@ begin
 			if v == 1
 				# (i,dilco[i][n][1],dilko[i][n],dilco[i][n][2],dilco[i][n][3])
 				j, k, ii, jj = dilco[i][n][1],dilko[i][n],dilco[i][n][2],dilco[i][n][3]
-				for iii in 1:9 # ...on retire sur la ligne et la colonne
+				for iii in 1:9 # …on retire sur la ligne et la colonne
 					get!(dimp,(i,iii),Set{Int}() )
 					get!(dimp,(iii,j),Set{Int}() )
 					iii != j && push!(dimp[i,iii],n)
 					iii != i && push!(dimp[iii,j],n)
 				end
-				for jjj in jj, iii in ii # ...et sur le carré
+				for jjj in jj, iii in ii # …et sur le carré
 					jjj != j && iii != i && push!(get!(dimp,(iii,jjj),Set{Int}() ),n)
 				end
-				# haskey(dicco,dico[i][n][1]) && delete!(dicco[dico[i][n][1]], n) #sio
+				# haskey(dicco,dico[i][n][1]) && delete!(dicco[dico[i][n][1]], n)#sio
 				haskey(dikko,dilko[i][n]) && delete!(dikko[dilko[i][n]], n)
 				# çaNavancePas = false # Car on a réussi à remplir
 			else 
@@ -230,17 +243,17 @@ begin
 			if v == 1
 				# (diklo[k][n][1],dikco[k][n][1],k,dikco[k][n][2],diklo[k][n][2])
 				i, j, ii, jj = diklo[k][n][1],dikco[k][n][1],dikco[k][n][2],diklo[k][n][2]
-				for iii in 1:9 # ...on retire sur la ligne et la colonne
+				for iii in 1:9 # …on retire sur la ligne et la colonne
 					get!(dimp,(i,iii),Set{Int}() )
 					get!(dimp,(iii,j),Set{Int}() )
 					iii != j && push!(dimp[i,iii],n)
 					iii != i && push!(dimp[iii,j],n)
 				end
-				for jjj in jj, iii in ii # ...et sur le carré
+				for jjj in jj, iii in ii # …et sur le carré
 					jjj != j && iii != i && push!(get!(dimp,(iii,jjj),Set{Int}() ),n)
 				end
-				#haskey(dillo,dilo[k][n][1]) && delete!(dillo[dilo[k][n][1]], n) #sio
-				#haskey(dicco,dico[k][n][1]) && delete!(dicco[dico[k][n][1]], n) #rde
+				# haskey(dillo,dilo[k][n][1]) && delete!(dillo[dilo[k][n][1]], n)#sio
+				# haskey(dicco,dico[k][n][1]) && delete!(dicco[dico[k][n][1]], n)#rde
 				# çaNavancePas = false # Car on a réussi à remplir
 			else 
 				if dikco[k][n][1] == 0 
@@ -258,10 +271,10 @@ begin
 	 return nothing
 	end
 	function pasAssezDePropal!(i::Int,j::Int, listepossibles::Set{Int},dictCheckLi::Dict{Set{Int}, Set{Int}},dictCheckCj::Dict{Set{Int}, Set{Int}},dictCheckCarré::Dict{Set{Int}, Set{Tuple{Int,Int}}},Nimp::Dict{Tuple{Int,Int}, Set{Int}}) #, setlig::Set{Int}=set19, setcol::Set{Int}=set19) ##, ii::UnitRange{Int}=carr(i), jj::UnitRange{Int}=carr(j), setcar::Set{Tuple{Int,Int}}=Set(tuplecarré(ii,jj)) ) 
-	# Ici l'idée est de voir s'il y a plus chiffres à mettre que de cases : en regardant tout ! entre deux cases, trois cases... sur la ligne, colonne, carré ^^
-	# Bref, s'il n'y a pas assez de propositions pour les chiffres à caser c'est vrai
+	# Ici l'idée est de voir s'il y a plus chiffres à mettre que de cases : en regardant tout ! entre deux cases, trois cases… sur la ligne, colonne, carré ^^
+	# Bref, s'il n'y a pas assez de propositions pour les chiffres à caser : c'est vrai
 	# C'est pas faux : donc ça va. 
-	# De plus, si un (ensemble de) chiffre est possible que sur certaines cellules, cela le retire du reste (en gardant via la matrice Nimp). Par exemple, sur une ligne, on a 1 à 8, la dernière cellule ne peut que être 9 -> grâce à Nimp, on retire le 9 des possibilités de toutes les cellules de la colonne, du carré (et de la ligne...) sauf pour cette dernière cellule justement ^^
+	# De plus, si un (ensemble de) chiffre est possible que sur certaines cellules, cela le retire du reste (en gardant via la matrice Nimp). Par exemple, sur une ligne, on a 1 à 8, la dernière cellule ne peut que être 9 -> grâce à Nimp, on retire le 9 des possibilités de toutes les cellules de la colonne, du carré (et de la ligne…) sauf pour cette dernière cellule justement ^^
 	# Cela permet de limiter les possibilités pour éviter au mieux les culs de sac!
 	# Etant quand-même un peu trop lourd, il faut l'utiliser que si besoin
 		for (k,v) in copy(dictCheckCj) # dico # Pour les colonnes
@@ -380,7 +393,8 @@ begin
 	document.getElementById('va_et_vient').addEventListener('click', làhaut);
 
 	</script><span id='va_et_vient'>") # Pour le texte entre les deux sudoku (initaux et solution). Cela permet de remonter la solution en cliquant dessus
-	interval(mini,maxi,val) = Docs.HTML("<input type='range' min='$(mini)' max='$(maxi)' value='$(val)' oninput='this.nextElementSibling.value=this.value'><output> $(val)</output>") # slider
+	# interval(mini,maxi,val) = Docs.HTML("<input type='range' min='$(mini)' max='$(maxi)' value='$(val)' oninput='this.nextElementSibling.value=this.value'><output> $(val)</output>") # slider
+	interval(mini=1,maxi=1,val=maxi,id=string(rand(Int))) = Docs.HTML("<input type='range' min='$(mini)' max='$(maxi)' value='$(val)' id='i$(id)' oninput='this.nextElementSibling.value=this.value;'/><input type='number' min='$(mini)' max='$(maxi)' value='$(val)' id='o$(id)' oninput='this.previousElementSibling.value=this.value;'/>") # slider
 	
 	Sudini(mémo, choix) = Docs.HTML("<script> // stylélàbasavecbonus!
 	const premier = JSON.stringify( $(mémo[1]) );
@@ -576,10 +590,13 @@ begin
 	
 		  if (val <= 9 && val >=1) {
 			data[i][j] = parseInt(val);
+		  } else if (val == 0) {
+			data[i][j] = 0;
+			e.target.value = '';
 		  } else { 
 			e.target.value = data[i][j] === 0 ? '' : data[i][j];
 		  }
-	
+			
 			if (oldata === data[i][j]) {
 				e.stopPropagation(); e.preventDefault(); 
 			} else {
@@ -604,7 +621,7 @@ begin
 	  if (jdata == premier) {
 		ele[0].checked = true;
 	  } else if (jdata == deuxième) {
-		ele[1].checked = true; // ...].click(); // était KO...
+		ele[1].checked = true; // …].click(); // était KO…
 	  }
 	  html.setAttribute('sudata', jdata);
 	  html.dispatchEvent(new Event('input'));
@@ -618,7 +635,7 @@ begin
 	# Pour sortir de la matrice (conversion en tableau en HTML) du sudoku
 	# Le JSudokuini permet de mettre les chiffres en bleu (savoir d'où l'on vient)
 	# Enfin, on peut choisir de voir petit à petit en cliquant ou toutVoir d'un coup
-	### if isa(JSudokuFini, String)... avait un bug d'affichage pour le reste du code...
+	### if isa(JSudokuFini, String)… avait un bug d'affichage pour le reste du code…
 		isa(JSudokuFini, String) ? (return Docs.HTML("<h5 style='text-align: center;margin-bottom: 6px;user-select: none;' onclick='$footix'> ⚡ Attention, sudoku initial à revoir ! </h5><table id='sudokufini' class='sudokool' style='user-select: none;' <tbody><tr><td style='text-align: center;width: 340px;' onclick='$footix'>$JSudokuFini</td></tr></tbody></table>")) : (return Docs.HTML(raw"""<script id="scriptfini">
 		// stylélàbasavecbonus!
 				
@@ -667,9 +684,14 @@ begin
 						const vale = e.target.innerHTML;
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
-							cible.value = vale; 
+							cible.value = cible.value == vale ? 0 : vale ; 
 							e.target.classList.remove("vide");
-							e.target.classList.add("ini");
+							e.target.classList.remove("cachée");
+							e.target.classList.toggle("ini"); // ini bleu ou vide
+							e.target.classList.add("gris"); 
+							/* cible.value = vale; 
+							e.target.classList.remove("vide");
+							e.target.classList.add("ini"); */
 							// document.getElementById("tesfoot")?.dispatchEvent(new Event("click"));
 							cible.dispatchEvent(new Event('ctop')); 
 						};
@@ -718,9 +740,14 @@ begin
 						const vale = e.target.innerHTML;
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
-							cible.value = vale; 
+							cible.value = cible.value == vale ? 0 : vale ; 
 							e.target.classList.remove("vide");
-							e.target.classList.add("ini");
+							e.target.classList.remove("cachée");
+							e.target.classList.toggle("ini"); // ini bleu ou vide
+							e.target.classList.add("gris"); 
+							/* cible.value = vale; 
+							e.target.classList.remove("vide");
+							e.target.classList.add("ini"); */
 							// document.getElementById("tesfoot")?.dispatchEvent(new Event("click"));
 							cible.dispatchEvent(new Event('ctop')); 
 						};
@@ -732,10 +759,10 @@ begin
 
 		};
 		
-		// sinon : return createSudokuHtml(...)._sudoku;
+		// sinon : return createSudokuHtml(…)._sudoku;
 		return msga(createSudokuHtml(""" *"$JSudokuFini"*", "*"$JSudokuini"*""") );
 		</script>""")
-		)### end ### if isa(JSudokuFini, String)... suite et fin du bug d'affichage
+		)### end ### if isa(JSudokuFini, String)… suite et fin du bug d'affichage
 	end
 	htmls = htmlSudoku ## mini version (ou alias plus court si besoin)
 	htmat = htmlSudoku ∘ matriceàlisteJS ## mini version 
@@ -801,14 +828,14 @@ begin
 					sac!(i,j,k,ii,jj,lcp,fusibleslig,dillo,dilco,dilko)
 					sak!(i,j,k,ii,jj,lcp,fusiblescar,diklo,dikco,dikko)
 					if length(lcp) == 1
-						for iii in 1:9 # ...on retire sur la ligne et la colonne
+						for iii in 1:9 # …on retire sur la ligne et la colonne
 							get!(mImp,(i,iii),Set{Int}() )
 							get!(mImp,(iii,j),Set{Int}() )
 							iii != j && union!(mImp[i,iii],lcp)
 							iii != i && union!(mImp[iii,j],lcp)
 						end
-						# for jj in carr(j), ii in carr(i) # ...et sur le carré
-						for jjj in jj, iii in ii # ...et sur le carré
+						# for jj in carr(j), ii in carr(i) # …et sur le carré
+						for jjj in jj, iii in ii # …et sur le carré
 							# jj != j && ii != i && union!(mImp[ii,jj],Set(lcp))
 							jjj != j && iii != i && union!(get!(mImp,(iii,jjj),Set{Int}() ),lcp)
 						end
@@ -921,8 +948,15 @@ begin
 								const vale = e.target.innerHTML; // pas utile dans ce cas !
 								var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 								if (!(isNaN(vale))) {
-									cible.value = vale; 
-									e.target.classList.toggle("ini");
+									cible.value = cible.value == vale ? 0 : vale ; 
+									// e.target.classList.toggle("ini"); // ini bleu
+									if (e.target.classList.contains("ini")) {
+										e.target.classList.remove("ini");} else {
+	e.target.parentElement.parentElement.childNodes.forEach(tr => {
+		tr.childNodes.forEach(tdd => {
+										tdd.classList.remove("ini");
+										})}); e.target.classList.add("ini");};
+									e.target.classList.add("gris"); 
 									// document.getElementById("tesfoot")?.dispatchEvent(new Event("click"));
 									cible.dispatchEvent(new Event('ctop')); 
 								};
@@ -930,7 +964,7 @@ begin
 						
 				})}); """)*raw"""};
 
-				const carolign = (e) => { // 3 et 1... à la base
+				const carolign = (e) => { // 3 et 1… à la base
 					const ilig = e.target.getAttribute('data-row');
 					const jcol = e.target.getAttribute('data-col'); 
 					const granlig = e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row');
@@ -1035,11 +1069,11 @@ begin
 		// /parCase = toutVoir # bidouille à changer ? /toutVoir = true /// plus haut
   		"""*(toutVoir && parCase ? raw"""justeremonte(tdmini);/* 3 et 2+3 */
 			""" : raw""" let tdbleus = _sudoku.querySelectorAll('td.ini'); touteffacer(tdbleus); 
-					"""*(parCase ? raw"""justeunecase(tdmini); /* 2 et 2 */ 
-							""" : (toutVoir ? raw"""tousleségalitios(tdmini); /* 3 et 1 + 2 et 3 */ """ : raw"""carolignios(tdmini); /* 2 et 1 */ """)))* raw"""
+				"""*(parCase ? raw"""justeunecase(tdmini); /* 2 et 2 */ 
+					""" : (toutVoir ? raw"""tousleségalitios(tdmini); /* 3 et 1 + 2 et 3 */ """ : raw"""carolignios(tdmini); /* 2 et 1 */ """)))* raw"""
 		  return _sudoku;
 		};
-		// sinon : return createSudokuHtml(...)._sudoku;
+		// sinon : return createSudokuHtml(…)._sudoku;
 		return msga(createSudokuHtml(""" *"$JPropal"*", "*"$JSudokuini"*"""));
 		</script>""")
 	end
@@ -1049,8 +1083,8 @@ begin
 #####################################################################################
 # Fonction pricipale qui résout n'importe quel sudoku (même faux) ###################
 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
-  function résoutSudokuMax(mS::Array{Int,2}, lesZéros::Set{Tuple{Int,Int,Int,UnitRange{Int},UnitRange{Int}}}, dicorézlig::Dict{Int, Set{Int}}, dicorézcol::Dict{Int, Set{Int}}, dicorézcar::Dict{Int, Set{Tuple{Int,Int}}} ; tours::Int = 81) 
-	nbToursTotal = tours # le nombre qui ce programme a réellement fait par essai
+  function résoutSudokuMax(mS::Array{Int,2}, lesZéros::Set{Tuple{Int,Int,Int,UnitRange{Int},UnitRange{Int}}}, dicorézlig::Dict{Int, Set{Int}}, dicorézcol::Dict{Int, Set{Int}}, dicorézcar::Dict{Int, Set{Tuple{Int,Int}}} ; tours::Int = 0) 
+	nbToursTotal = tours # ce nombre reprend le passage via résoutSudoku
 	# lesZéros = Set(vZéros) ## avant Set(shuffle!(vZéros)) # Set une bonne ^^
 	listedechoix = Tuple{Int,Int,Int,Int,Set{Int}}[]
 	listedancienneMat = Array{Int,2}[]
@@ -1110,11 +1144,10 @@ begin
 				elseif çaNavancePas && length(listechiffre) < minChoixdesZéros
 					minChoixdesZéros = length(listechiffre)
 					choixAfaire = (i,j, 1, minChoixdesZéros, listechiffre) 
-					leZéroàSuppr = (i,j,k,ii,jj) # On garde les cellules avec ... 
-				end # ... le moins de choix à faire, si ça n'avance pas
+					leZéroàSuppr = (i,j,k,ii,jj) # On garde les cellules avec … 
+				end # … le moins de choix à faire, si ça n'avance pas
 			end
-		end
-		# if allerAuChoixSuivant || çaNavancePas && (dImp == mImp) # en mieux ^^
+		end # if allerAuChoixSuivant || çaNavancePas && (dImp == mImp) # en mieux ^^
 		if allerAuChoixSuivant || uniclk!(diclo,dicco,dicko,dillo,dilco,dilko,diklo,dikco,dikko,mS,mImp,dicorézlig,dicorézcol,dicorézcar,lesZérosàSuppr,çaNavancePas)
 			if allerAuChoixSuivant # Si le choix en cours n'est pas bon
 				if isempty(listedechoix) # pas de bol hein
@@ -1148,7 +1181,7 @@ begin
 				push!(listedechoix, choixAfaire) # ici pas besoin de copie
 				push!(listedancienneMat , copy(mS)) # copie en dur
 				push!(listedancienImp , deepcopy(mImp)) # copie en dur
-				delete!(lesZéros, leZéroàSuppr) # On retire ceux... idem set
+				delete!(lesZéros, leZéroàSuppr) # On retire ceux… idem set
 				push!(listedesZéros , copy(lesZéros)) # copie en dur aussi
 				nbChoixfait += 1
 
@@ -1211,37 +1244,37 @@ begin
 					elseif çaNavancePas && length(listechiffre) < minChoixdesZéros
 						minChoixdesZéros = length(listechiffre)
 						choixAfaire = (i,j, 1, minChoixdesZéros, listechiffre)  
-						end # ... le moins de choix à faire, si ça n'avance pas
+						end # …le moins de choix à faire, si ça n'avance pas
 				end
 			end
-			if allerAuChoixSuivant || çaNavancePas 
-				if allerAuChoixSuivant # Si le choix en cours n'est pas bon
-					if isempty(listedechoix) # pas de bol hein
-						return impossible
-					elseif choixPrécédent[3] < choixPrécédent[4] # Aller au suivant 
-						(i,j, choix, l, lc) = choixPrécédent
-						choixPrécédent = (i,j, choix+1, l, lc)
-						listedechoix[nbChoixfait] = choixPrécédent
-						mS = copy(listedancienneMat[nbChoixfait])
-						allerAuChoixSuivant = false
-						mS[i,j] = pop!(lc)
-						lesZéros = copy(listedesZéros[nbChoixfait])
-					elseif length(listedechoix) < 2 # pas 2 bol
-						return impossible
-					else # Il faut revenir d'un cran dans la liste historique 
-						map(pop!,(listedechoix,listedancienneMat, listedesZéros))
-						nbChoixfait -= 1
-						choixPrécédent = listedechoix[nbChoixfait]
-					end
-				else # Nouveau choix à faire et à garder en mémoire 
-					push!(listedechoix, choixAfaire) # ici pas besoin de copie
-					push!(listedancienneMat , copy(mS)) # copie en dur
-					delete!(lesZéros, choixAfaire[1:2]) # On retire ceux... idem set ?
-					push!(listedesZéros , copy(lesZéros)) # copie en dur aussi 
-					nbChoixfait += 1
-					mS[choixAfaire[1:2]...] = pop!(choixAfaire[5])
-					choixPrécédent = choixAfaire
-				end 
+			### if allerAuChoixSuivant || çaNavancePas 
+			if allerAuChoixSuivant # Si le choix en cours n'est pas bon
+				if isempty(listedechoix) # pas de bol hein
+					return impossible
+				elseif choixPrécédent[3] < choixPrécédent[4] # Aller au suivant 
+					(i,j, choix, l, lc) = choixPrécédent
+					choixPrécédent = (i,j, choix+1, l, lc)
+					listedechoix[nbChoixfait] = choixPrécédent
+					mS = copy(listedancienneMat[nbChoixfait])
+					allerAuChoixSuivant = false
+					mS[i,j] = pop!(lc)
+					lesZéros = copy(listedesZéros[nbChoixfait])
+				elseif length(listedechoix) < 2 # pas 2 bol
+					return impossible
+				else # Il faut revenir d'un cran dans la liste historique 
+					map(pop!,(listedechoix,listedancienneMat, listedesZéros))
+					nbChoixfait -= 1
+					choixPrécédent = listedechoix[nbChoixfait]
+				end
+			elseif çaNavancePas # Nouveau choix à faire et à garder en mémoire 
+				push!(listedechoix, choixAfaire) # ici pas besoin de copie
+				push!(listedancienneMat , copy(mS)) # copie en dur
+				delete!(lesZéros, choixAfaire[1:2]) # On retire ceux… idem set ?
+				push!(listedesZéros , copy(lesZéros)) # copie en dur aussi 
+				nbChoixfait += 1
+				mS[choixAfaire[1:2]...] = pop!(choixAfaire[5])
+				choixPrécédent = choixAfaire
+				### end 
 			else # !çaNavancePas && !allerAuChoixSuivant ## Tout va bien ici
 				setdiff!(lesZéros, lesZérosàSuppr) # On retire ceux remplis 
 				lesZérosàSuppr=Set{Tuple{Int,Int}}()
@@ -1275,6 +1308,7 @@ begin
   function sudokuAléatoireFini() ## Génère un sudoku aléatoire fini (aucun vide)
 	return listeJSàmatrice(résoutSudoku(jsvd())[1])
   end
+  saf = maf = sudokuAléatoireFini ## mini version
   function sudokuAléatoire(x=19:62 ; fun=rand, matzéro=sudokuAléatoireFini())#rand1:81
   # Une fois le sudokuAléatoireFini, on le vide un peu d'un nombre x de cellules
 	if !isa(x, Int) # Permet de choisir le nombre de zéro ou un intervale
@@ -1313,12 +1347,14 @@ begin
 	window.location.href = "#ModifierInit";
 	</script><h6 style="margin-top: 0;"> Ci-dessous, le bouton ▶ restore le vieux sudoku en sudoku initial ! 🥳 <a id="$idLien" href='#ModifierInit'> retour en haut ↑ </a> </h6>""")
   end
-  vieux = vs = vs! = vS! = vieuxSudoku! ## mini version
+  vieux = vieux! = vs = vs! = vS! = vieuxSudoku! ## mini version
   vsd() = vieuxSudoku!(défaut=true) ## Pour revenir à l'original
   ini = défaut = defaut = vsd ## mini version
+  vsr() = vieuxSudoku!(0) ## Pour partir d'un sudoku rempli ou fini ^^
+  vsf = vsr ## mini version
   sudokuinitial!() = vieuxSudoku!(SudokuMémo[3])
   vieuxSudoku!(nouveau::Array{Int,2} ; défaut=false, mémoire=SudokuMémo, matzéro=sudokuAléatoireFini(), idLien="lien"*string(rand(Int))) = vieuxSudoku!(matriceàlisteJS(nouveau'); défaut=défaut, mémoire=mémoire, matzéro=matzéro, idLien=idLien)
-
+  
   #= D'autres fonctions si besoin pour tester et repérer des erreurs :
   function sudokuAlt(nbChiffresMax=rand(26:81), moinsOK=true, nbessai=1) 
   # Sorte de sudokuAléatoire mais un peu plus foireux, en effet, il n'est pas forcément réalisable. C'était surtout pour faire des tests.
@@ -1349,8 +1385,9 @@ begin
   salt = sudokuAlt ## mini version
   function blindtest(nbtest=100 ; tmax=81, nbzéro = (rand, 7:77), sudf=sudokuAléatoireFini)
   # Permet de tester la rapidité et certains bugs de ma fonction principale résoutSudoku. C'est donc une fonction qui est technique et qui sert surtout quand il y a des évolutions de cette fonction.
-	nbzérof() = isa(nbzéro,Tuple) ? nbzéro=nbzéro[1](nbzéro[2]) : Nothing
-	for i in 1:nbtest
+	nbzérof() = isa(nbzéro,Tuple) && nbzéro=nbzéro[1](nbzéro[2])
+    noproblemo = sudf==sudokuAléatoireFini
+	for tour in 1:nbtest
 		sudini = sudf()
 		nbzérof()
 		sudaléa = sudokuAléatoire(nbzéro, fun=identity, matzéro=copy(sudini))
@@ -1360,30 +1397,149 @@ begin
 		# 	return ("bug", e, sudaléa)
 		# end
 		soluce = résoutSudoku(sudaléa ; nbToursMax=tmax)
-		if soluce[1] isa String
-			## if sudf==sudokuAléatoireFini || soluce[1] != impossible[1]
-		# if soluce[1] == impossible[1]
-		# if soluce[1] == àcorriger[1]
-				return matriceàlisteJS(sudini), i, nbzéro, soluce, sudini,  replace("vieux( $(matriceàlisteJS(sudini)) )"," "=>""), sudaléa, replace("vieux($sudaléa)"," "=>"")
+		# if soluce[1] isa String
+		if noproblemo && soluce[1] isa String
+			## if noproblemo || soluce[1] != impossible[1]
+			# if soluce[1] == impossible[1]
+			# if soluce[1] == àcorriger[1]
+				return (;sudzér = jsm(sudaléa), sudini, tour, nbzéro, soluce, tz="vieux($(jsm(sudaléa)))", ti="vieux($sudini)")
 			# end
+		elseif !isa(soluce[1],String) && !vérifSudokuBon(jsm(soluce[1]))
+				return (;sudzér = jsm(sudaléa), sudini, tour, nbzéro, soluce, tz="vieux($(jsm(sudaléa)))", ti="vieux($sudini)")
 		end
 	end
-	return [[0,0,0,0,0,0,0,0,0],[0,2,3,0,0,0,1,5,0],[7,0,0,4,0,2,0,0,6],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,7,2,0,0,0,8,4,0],[0,1,4,0,0,0,7,9,0],[0,0,7,9,2,4,3,0,0],[0,0,0,1,5,7,0,0,0]], "Tout va bien... pour le moment 👍"
-	# return "Tout va bien... pour le moment 👍"
+	# return [[0,0,0,0,0,0,0,0,0],[0,2,3,0,0,0,1,5,0],[7,0,0,4,0,2,0,0,6],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,7,2,0,0,0,8,4,0],[0,1,4,0,0,0,7,9,0],[0,0,7,9,2,4,3,0,0],[0,0,0,1,5,7,0,0,0]], "Tout va bien… pour le moment 👍"
+	return "Tout va bien… pour le moment 👍"
   end
   bt = testme = blindtest ## mini version =#
-  ## exempletest = bt(100,sudf=salt);vieux(exempletest[1])
-######################################################################################
+  ## btt = bt(); btt isa String ? md"# Top 😎" : vieux(btt[1])
+  ## bbt = bt(sudf=salt); bbt isa String ? md"# Top 😎" : bbt[1]
+  
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#= begin #### BONUS du BONUS : pouvoir utiliser * sur les MD et Docs.HTML ^^
+	# → https://discourse.julialang.org/t/concatenate-markdown-strings/59385
+	# → https://github.com/JuliaLang/julia/blob/master/base/regex.jl#L759
+	# https://github.com/JuliaLang/julia/blob/master/stdlib/Markdown/src/Common/
+	import Base: *, ^
+	# export *, ^
+	ccat(c1, c2, ss=:no) = isfusionable(c1, c2, ss) ? fusion(c1, c2, ss) : vcat(c1,c2)
+	*(m1::Markdown.MD, m2::Markdown.MD) = Markdown.MD(ccat(m1.content, m2.content))
+	*(m::Markdown.MD, s::Union{AbstractChar, AbstractString, Docs.HTML}) = 
+		Markdown.MD(ccat(m.content, parsebis(s).content, :right))
+	*(s::Union{AbstractChar, AbstractString, Docs.HTML}, m::Markdown.MD) = 
+		Markdown.MD(ccat(parsebis(s).content, m.content, :left))
+	*(m::Markdown.MD) = m # avoids wrapping m in a useless subpattern (as Regex.jl)
+	^(m::Markdown.MD, i::Int) = *(Markdown.MD(),fill(m,i)...)
+ 	
+	isfusionable(c1, c2, stringside::Symbol) = 
+		!isempty(c1) && !isempty(c2) && (similar(c1[end], c2[1]) || 
+			(stringside == :right ? c2[1] isa Markdown.Paragraph : 
+				(stringside == :left ? c1[end] isa Markdown.Paragraph : false)) )
+	fusion(c1, c2, stringside::Symbol) = 
+		vcat(c1[1:end-1], premerge(c1[end], c2[1], stringside), c2[2:end])
+	
+	similar(::Any, ::Any) = false # by default it is not similar
+	similar(::Markdown.Paragraph, ::Markdown.Paragraph) = true # md"is " * md" good ?"
+	similar(h1::Markdown.Header{l1}, h2::Markdown.Header{l2}) where {l1,l2} = (l1==l2)
+	similar(c1::Markdown.Code, c2::Markdown.Code) = (c1.language == c2.language)
+	similar(f1::Markdown.Footnote, f2::Markdown.Footnote) = (f1.id == f2.id)
+	similar(::Markdown.BlockQuote, ::Markdown.BlockQuote) = true 
+	similar(a1::Markdown.Admonition, a2::Markdown.Admonition) = 
+		(a1.category == a2.category) && (a1.title == a2.title)
+	similar(l1::Markdown.List,l2::Markdown.List) = 
+		(l1.ordered == l2.ordered) && (l1.loose == l2.loose)
+	
+	prop(re::Any) = re # rest or other type, for ex. ::Docs.HTML
+	prop(p::Union{Markdown.Paragraph, Markdown.BlockQuote, Markdown.Admonition}) = 
+		p.content
+	prop(h::Union{Markdown.Header, Markdown.Footnote}) = h.text
+	prop(l::Markdown.Code) = l.code
+	prop(l::Markdown.List) = l.items
+	
+	function premerge(c1, c2, ss) 
+		if ss == :left && c1 isa Markdown.Paragraph
+			if c2 isa Union{Markdown.Paragraph, Markdown.Header}
+				merge(c2, prop(c1), prop(c2))
+			elseif c2 isa Markdown.Code
+				Markdown.Code(c2.language, hstring(Markdown.MD(c1), prop(c2)))
+			else merge(c2, Any[Markdown.Paragraph(Any[prop(c1)])], prop(c2))
+			end
+		elseif ss == :right && c2 isa Markdown.Paragraph
+			if c1 isa Union{Markdown.Paragraph, Markdown.Header}
+				merge(c1, prop(c1), prop(c2))
+			elseif c1 isa Markdown.Code
+				Markdown.Code(c1.language, hstring(prop(c1), Markdown.MD(c2)))
+			else merge(c1, prop(c1), Any[Markdown.Paragraph(Any[prop(c2)])])
+			end
+		else merge(c1, prop(c1), prop(c2))
+		end
+	end
+	
+	merge(::Any, hc, ac) = vcat(hc, ac) # for md"""$(html"that")"""
+	merge(::Markdown.Paragraph, p1c, p2c) = Markdown.Paragraph(vcat(p1c, p2c))
+	merge(::Markdown.Header{l}, h1t, h2t) where l = Markdown.Header{l}(vcat(h1t, h2t))
+	merge(c::Markdown.Code, c1c, c2c) = Markdown.Code(c.language, *(c1c, c2c))
+	merge(f::Markdown.Footnote, f1t, f2t) = Markdown.Footnote(f.id, ccat(f1t, f2t))
+	merge(::Markdown.BlockQuote, b1c, b2c) = Markdown.BlockQuote(ccat(b1c, b2c))
+	merge(a::Markdown.Admonition, a1c, a2c) = 
+		Markdown.Admonition(a.category, a.title, ccat(a1c, a2c))
+	merge(l::Markdown.List, l1i, l2i) = 
+		Markdown.List(vcat(l1i, l2i), l.ordered, l.loose)
+	
+	parsebis(c::AbstractChar) = Markdown.MD(Markdown.Paragraph(Any[string(c)]))
+	function parsebis(s::AbstractString)
+		ps = Markdown.parse(s)
+		if ps == Markdown.MD(Markdown.Code("", "")) || ps == Markdown.MD(Markdown.Paragraph([]))
+			return Markdown.MD(Markdown.Paragraph(Any[" "]))
+		else return ps
+		end # avoids md" " → Code("","") or md"    " → Paragraph([]) but just " "
+	end
+	function parsebis(h::Docs.HTML)
+		(isempty(h.content) || h.content == "") && return Markdown.MD()
+		return Markdown.MD(Markdown.Paragraph(Any[h]))
+	end
+	function hstring(md1...)
+		io = IOBuffer()
+		print(io, md1...)
+		return unescape_string(replace(String(take!(io)), r"""HTML{String}\(\"(.*)\"\)""" => s"\1"), '$')
+	end
+	*(h1::Docs.HTML{String}, h2::Docs.HTML{String}) = 
+		Docs.HTML(*(h1.content, h2.content)) 
+	*(h::Docs.HTML{String}, s::Union{AbstractChar, AbstractString}) = 
+		Docs.HTML(*(h.content, s)) 
+	*(s::Union{AbstractChar, AbstractString}, h::Docs.HTML{String}) = 
+		Docs.HTML(*(s, h.content)) 
+		# → https://github.com/JuliaLang/julia/blob/master/base/docs/utils.jl
+		### Note from future : add this to Docs.Text (as Docs.HTML) ?
+    
+# begin #### Ancienne tentative simple mais non concluante #####################
+	# import Base: *
+	# function printNparse(md1, md2)
+		# ioMD = IOBuffer()
+		# print(ioMD, md1, md2)
+		# return Markdown.parse(seekstart(ioMD))
+	# end
+	# *(md1::Markdown.MD, md2::Union{AbstractChar, AbstractString}) = printNparse(md1, md2)
+	# *(md1::Union{AbstractChar, AbstractString, Markdown.MD}, md2::Markdown.MD) = printNparse(md1, md2)
+
+	# *(md::Markdown.MD, h::Docs.HTML) = Markdown.MD(vcat(md.content, h))
+	# *(h::Docs.HTML, md::Markdown.MD) = Markdown.MD(vcat(h, h.content))
+	# *(h1::Docs.HTML{String}, h2::Docs.HTML{String}) = Docs.HTML(*(h1.content, h2.content))
+	## Not good for md""" $(html"that") """
+# end
+end =#
 end; nothing; # stylélàbasavecbonus! ## voir juste dans la cellule #Bonus au dessus ↑
 # Voilà ! fin de la plupart du code de ce programme Plutoku.jl
 
-# ╔═╡ a2345678-7654-3210-b002-123456789001
-md"# Résoudre un Sudoku par Alexis $cool" #= v1.8.6 jeudi 07/07/2022 😉
+# ╔═╡ abde0002-0001-0002-0001-0002dabe0001
+md"## Résoudre un Sudoku par Alexis $cool" #= v1.8.7 vendredi 07/07/2023 🎲 
 
 Pour la vue HTML et le style CSS, cela est inspiré du sudoku https://observablehq.com/@filipermlh/ia-sudoku-ple1
 Pour le JavaScript, merci à (case suivante input) https://stackoverflow.com/a/15595732, (touches clavier) https://stackoverflow.com/a/44213036
 Et bien sûr le calepin d'exemple de Fons "3. Interactivity"
-Pour info, le code principal est stylélàbasavecbonus! ou plutôt caché juste après :)
+Pour info, le code principal est stylélàbasavecbonus! ou plutôt caché juste après :)
 
 Ce "plutoku" est visible sur : 
 https://github.com/4LD/plutoku
@@ -1395,74 +1551,67 @@ https://binder.plutojl.org/open?url=https:%252F%252Fraw.githubusercontent.com%25
 
 =#
 
-# ╔═╡ a2345678-7654-3210-b003-123456789003
-md"""Pour cette session, si besoin d'un : $(@bind boutonSudokuInitial html"<input type=button style='margin: 0 6px 0 6px' value='📷 instantané ;)'>") *(si sudoku vide → sudoku aléatoire)*"""
+# ╔═╡ abde0003-0003-0003-0003-0003dabe0003
+md"""Pour cette session, si besoin d'un : $(@bind boutonSudokuInitial html"<input type=button style='margin: 0 6px 0 6px' value='📷 instantané ;)'>") _(si sudoku vide → sudoku aléatoire)_"""
 
-# ╔═╡ a2345678-7654-3210-b004-123456789002
+# ╔═╡ abde0004-0002-0004-0002-0004dabe0002
 begin 
 	boutonSudokuInitial # Remettre le puce "ModifierInit" sur Retour instantané ;)
 	sudokuinitial!() # vieuxSudoku!(SudokuMémo[3]) Pour remplacer par celui modifié
-	md""" $(@bind viderOupas puces(["Vider le sudoku initial","Retour instantané ;)"],"Retour instantané ;)"; idPuces="ModifierInit")) $(html" <a href='#Bonus' style='padding-left: 10px; border-left: medium dashed #777;'>Bonus en bas ↓</a>") _: astuces + vieuxSudoku!_"""
+	md""" $(@bind viderOupas puces(["Vider le sudoku initial","Retour instantané ;)"],"Retour instantané ;)"; idPuces="ModifierInit")) $(html" <a href='#Bonus' style='padding-left: 10px; border-left: 2px dotted var(--rule-color,#77777726);' >Bonus en bas ↓</a>") _: astuces + vieux!_"""
 end
 
-# ╔═╡ a2345678-7654-3210-b005-123456789005
+# ╔═╡ abde0005-0005-0005-0005-0005dabe0005
 begin
-	choixSudoku = (!isa(viderOupas, String) || viderOupas != "Vider le sudoku initial" 		  ?  2  :  1  )
+	choixSudoku = (!isa(viderOupas, String) || viderOupas != "Vider le sudoku initial" ?  2  :  1  ) # Pour simplifier l'info du choix (explication nulle :)
 	@bind bindJSudoku BondJamesBond(Sudini(SudokuMémo, choixSudoku), SudokuMémo[3])
 end
 
-# ╔═╡ a2345678-7654-3210-b006-123456789004
+# ╔═╡ abde0006-0004-0006-0004-0006dabe0004
 begin 
-	SudokuMémo[3] = bindJSudoku # Pour que le sudoku en cours (initial modifié) reste en mémoire si besoin -> Retour instantané ;) 
-	sudokuSolution = résoutSudoku(bindJSudoku) # calcule la solution
-	# sudokuSolution = résoutSudoku(bindJSudoku; nbToursMax=0) ## Pour ralentir 🐌🐢
-	sudokuSolutionVue = sudokuSolution[1]
-	sudokuSolution[2] # La petite explication seule : "il a fallu XX choix..."
-end ### mesurable avec ## using BenchmarkTools # @benchmark résoutSudoku(bindJSudoku)
+	SudokuMémo[3] = bindJSudoku # Pour qu'il reste en mémoire → Retour instantané ;) 
+	sudokuSolution = résoutSudoku(bindJSudoku) #;nbToursMax=0)# calcule la solution
+	sudokuSolutionVue = sudokuSolution[1] # Le sudoku résolu (voir plus loin)
+	sudokuSolution[2] # La petite explication seule : "Statistiques : ce programme…"
+end ## mesurable avec # using BenchmarkTools; @benchmark résoutSudoku(bindJSudoku)
 
-# ╔═╡ a2345678-7654-3210-b007-123456789006
+# ╔═╡ abde0007-0006-0007-0006-0007dabe0006
 viderOupas; md"""#### $vaetvient Sudoku initial ⤴ (modifiable) et sa solution : $(html"</span>") """
 
-# ╔═╡ a2345678-7654-3210-b008-123456789007
+# ╔═╡ abde0008-0007-0008-0007-0008dabe0007
 md"""$(@bind voirOuPas BondJamesBond(puces(["🤫 Cachée", "En touchant, entrevoir les chiffres…", "Pour toutes les cases, voir les chiffres…"],"🤫 Cachée"; idPuces="CacherRésultat"), "🤫 Cachée") ) 
 
-$(html"<div style='margin: 2px; border-bottom: medium dashed #777;'></div>")
+$(html"<div style='border-bottom: 2px dotted var(--rule-color,#777);'></div>")
                                                 
 $(@bind PropalOuSoluce BondJamesBond(puces(["…par chiffre", "…par case 🔢", "…par total (minimum = ✔)", "…de la solution 🚩"], "…par chiffre"; idPuces="PossiblesEtSolution", classe="pasla" ), "…par chiffre") ) 
 
-$(html"<div id='divers' class='pasla' style='margin-top: 8px; margin-left: 1%; user-select: none; font-style: italic; font-weight: bold; color: #777'><span id='pucaroligne'><input type='checkbox' id='caroligne' name='caroligne'><label for='caroligne' style='margin-left: 2px;'>Caroligne ⚔</label></span>")
-$(html"<span id='puchoixàmettreenhaut' style='margin-left: 5%'><input type='checkbox' id='choixàmettreenhaut' name='choixàmettreenhaut'><label for='choixàmettreenhaut' style='margin-left: 2px;'>Cocher ici, puis toucher le chiffre à mettre dans le Sudoku initial</label></span></div>")""" 
+$(html"<div id='divers' class='pasla' style='margin-top: 8px; margin-left: 1%; user-select: none; font-style: italic; font-weight: bold; color: #777'><span id='pucaroligne'><input type='checkbox' id='caroligne' name='caroligne'><label for='caroligne' style='margin-left: 2px;'>Caroligne ⚔</label></span>
+<span id='puchoixàmettreenhaut' style='margin-left: 5%'><input type='checkbox' id='choixàmettreenhaut' name='choixàmettreenhaut'><label for='choixàmettreenhaut' style='margin-left: 2px;'>Cocher ici, puis toucher le chiffre à mettre dans le Sudoku initial</label></span></div>")"""
 
-# ╔═╡ a2345678-7654-3210-b009-123456789008
-begin
-	if !isa(voirOuPas, String) || voirOuPas == "🤫 Cachée"
-		Markdown.parse( ( sudokuSolutionVue isa String ? 
-		"##### 🤐 Cela est caché pour le moment comme demandé ⚡
-Malchance ! " : 
-		"##### 🤐 Cela est caché pour le moment comme demandé
-Bonne chance ! " 
-		) * "Si besoin, cocher `🤫 Cachée` pour revoir cette information : 
+# ╔═╡ abde0009-0008-0009-0008-0009dabe0008
+if !isa(voirOuPas, String) || voirOuPas == "🤫 Cachée"
+	Markdown.parse( "###### 🤐 Cela est caché pour le moment comme demandé\n" * ( sudokuSolutionVue isa String ? "Malchance !" : "Bonne chance !" ) * 
+" Si besoin, cocher `🤫 Cachée` pour revoir cette information : 
 
-`En touchant, entrevoir les chiffres…` permet en cliquant de faire apparaître le contenu…\\
-_(cliquer sur les chiffres en bleu pour tout refaire disparaître)_ 
+`En touchant, entrevoir les chiffres…` de chaque case…\\
+_(petit truc : les chiffres en bleu réeffacent tout)_
 
-   - `…par chiffre` montre si le chiffre est possible, en cliquant précisément : du 1 en haut à gauche, au 9 en bas à droite de la case → le 5 est donc au centre
-   - `…par case 🔢` montre la l'ensemble des chiffres possibles par case
-   - `…par total (minimum = ✔)` fait le compte de l'ensemble. La ou les cases avec `✔` à la place du 9 ont les plus petits nombre de possibilités du sudoku
-   - seul `…de la solution 🚩` montre (un ou) des chiffres du sudoku fini
+   - `…par chiffre` et si possible : haut gauche = 1 au bas droite = 9 (centre de la case = 5)
+   - `…par case 🔢` l'ensemble des chiffres possibles (de toute la case)
+   - `…par total (minimum = ✔)` fait le compte et celle(s) avec ✔ (en place du 9) ont la somme minimale
+   - seul `…de la solution 🚩` montre des chiffres du sudoku fini
 
-D'un coup `Pour toutes les cases, voir les chiffres…` de la sous-catégorie choisie
+On peut `Pour toutes les cases, voir les chiffres…` de la sous-catégorie choisie
 
 Enfin, il y a deux options :  
-`Caroligne ⚔` montre les cases liées → carré, colonne, ligne ; \\
+`Caroligne ⚔` pour les cases liées (carré, colonne, ligne) ; \\
 ou `Cocher ici, puis toucher le chiffre à mettre dans le Sudoku initial`" )
-	elseif PropalOuSoluce == "…de la solution 🚩" # || PropalOuSoluce isa Missing
+elseif PropalOuSoluce == "…de la solution 🚩" # || PropalOuSoluce isa Missing
 		htmlSudoku(sudokuSolutionVue,bindJSudoku ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les chiffres…") )
-	else htmlSudokuPropal(bindJSudoku,sudokuSolutionVue ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les chiffres…"), parCase= (PropalOuSoluce =="…par case 🔢"), somme= (PropalOuSoluce=="…par total (minimum = ✔)"))
-	end
+else htmlSudokuPropal(bindJSudoku,sudokuSolutionVue ; toutVoir= (voirOuPas=="Pour toutes les cases, voir les chiffres…"), parCase= (PropalOuSoluce =="…par case 🔢"), somme= (PropalOuSoluce=="…par total (minimum = ✔)"))
 end
 
-# ╔═╡ a2345678-7654-3210-b010-123456789009
+# ╔═╡ abde0010-0009-0010-0009-0010dabe0009
 stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est dans la cellule cachée tout en bas, juste après la cellule vide _`Enter cell code...`_" =# Docs.HTML(raw"""<style> /* Pour les boutons et 'code' */
 	input[type="button" i] {
 		background-color: #aaa;
@@ -1474,7 +1623,8 @@ stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est d
 		background-color: #777;
 		color: white;
 		border: 2px solid #777;}
-	pluto-output.rich_output code {border: solid 1px #9b9f9f; /*/ contour fin /*/}
+	// pluto-output.rich_output code {border: solid 1px #9b9f9f; /*/ contour fin /*/}
+	pluto-output.rich_output code {border: solid 1px var(--rule-color,#77777726);}
 /* autres bidouilles */
 	#taide, #tesfoot, #va_et_vient {user-select: none;}
 	#sudokufini, #copiefinie {cursor: pointer;} /*/ doigt et non souris /*/
@@ -1483,8 +1633,8 @@ stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est d
 	tr#lignenonvisible {border-top: hidden;}
 	pluto-cell:not(.show_input) > pluto-runarea .runcell {display: none;}
 	/* pluto-cell:not(.show_input) > pluto-runarea, */
-	/* #a2345678-7654-3210-b009-123456789008 > pluto-runarea, */
-	#a2345678-7654-3210-b006-123456789004 > pluto-runarea {
+	/* #abde0009-0008-0009-0008-0009dabe0008 > pluto-runarea, */
+	#abde0006-0004-0006-0004-0006dabe0004 > pluto-runarea {
 	    display: block;
 		background-color: unset;
 	    opacity: 1;}
@@ -1494,9 +1644,9 @@ stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est d
 		margin-block-start: 0;
 		margin-block-end: 0;}
 	table.sudokool tr {border:0;}
-	table.sudokool tr.troisr {border-top: thick solid var(--cursor-color, #777);}
+	table.sudokool tr.troisr {border-top: thick solid var(--cursor-color,#777);}
 	table.sudokool tr td {
-		border: 1px solid var(--cursor-color, #777); 
+		border: 1px solid var(--cursor-color,#777); 
 		padding: 0 !important;}
 	table.sudokool tr td.troisd {border-left: thick solid var(--cursor-color, #777);}
 	table.sudokool tr td input {
@@ -1507,7 +1657,7 @@ stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est d
 		background-color: transparent;
 		border:0;}
 	table.sudokool tr td.damier{
-		background-color:#77777726; } /* #777 ou #777777 adouci */
+		background-color: var(--rule-color,#77777726); } /* #777 ou #777777 adouci */
 /* Pour le résultat ou aide */
 	table.sudokool tr td {
 		user-select: none;
@@ -1518,10 +1668,12 @@ stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est d
 	table.sudokool tr td.ini {
 		font-weight: bold;
 		color: var(--cm-var-color, #afb7d3);}
-	table.sudokool tr td.vide {
-		color: var(--cm-property-color, #777);}
-	table.sudokool tr td.cachée {
-		color: transparent;}
+	table.sudokool tr td.ini.gris {
+		font-style: italic;
+		color: var(--cm-var-color, #afb7d3);}
+	table.sudokool tr td.vide {color: var(--cm-property-color, #f99b15);}
+	table.sudokool tr td.cachée {color: transparent;}
+	table.sudokool tr td.gris {color: #777; font-style: italic;}
 /*Pour le résultatmini ou aidemini*/
 	table.sudokoolmini {
 		border: hidden !important;
@@ -1535,8 +1687,9 @@ stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est d
 		font-size: 7.49999pt;
 		width: 12px;
 		height: 11.67187px; 
-			color: var(--cm-property-color, #777);}
+			color: var(--cm-property-color, #f99b15);}
 	table.sudokoolmini tr td.cachée {color: transparent;}
+	table.sudokoolmini tr td.gris {color: #777; font-style: italic;}
 </style>"""); pourvoirplutôt = Docs.HTML(raw"""<script>
 // const plutôtstylé = `<link rel="stylesheet" href="./hide-ui.css"><style id="cachémoiplutôt">
 const plutôtstylé = `<style id="cachémoiplutôt">
@@ -1546,15 +1699,9 @@ main {
 	margin: 0 !important;
     padding: 0 !important;
     // padding-bottom: 4rem !important;}
-nav, header, preamble,
-pluto-cell:not(.show_input) > pluto-runarea .runcell,
-body > header,
-preamble > button, 
-pluto-cell > button,
-pluto-input > button,
-footer,
-pluto-runarea,
-#helpbox-wrapper {
+nav, header, preamble, pluto-cell:not(.show_input) > pluto-runarea .runcell,
+body > header, preamble > button, pluto-cell > button, pluto-input > button,
+footer, pluto-runarea, #helpbox-wrapper {
     display: none !important;}
 pluto-shoulder {
 	visibility:hidden;}
@@ -1566,20 +1713,17 @@ pluto-cell > pluto-runarea {
 @media screen and (any-pointer: fine) {
     pluto-cell > pluto-runarea {
         // opacity: 0.5;
-        opacity: 0;
-        /* to make it feel smooth: */
+        opacity: 0; /* to make it feel smooth: */
         transition: opacity 0.25s ease-in-out;
     }
     pluto-cell > pluto-runarea > button:hover > span,
     pluto-cell:hover > pluto-runarea > span {
         // /* avant */ opacity: 1;
-        opacity: 0.5;
-        /* to make it feel snappy: */
+        opacity: 0.5; /* to make it feel snappy: */
         transition: opacity 0.05s ease-in-out;
     }
   //  pluto-cell > pluto-shoulder > button:hover {
-  //      opacity: 0;
-  //      /* to make it feel snappy: */
+  //      opacity: 0; /* to make it feel snappy: */
   //      transition: opacity 0.05s ease-in-out;
   //  } 
 } 
@@ -1591,8 +1735,9 @@ function cooloupas() {
 // document.getElementById("BN")?.removeEventListener("click", cooloupas);
 document.getElementById("BN")?.addEventListener("click", cooloupas);
 
-var stylécaché = html`<span id="stylé">${plutôtstylé}</span>`;
-// var stylécaché = html`<span id="stylé"></span>`; // FAUX bidouille à supprimer ////
+var stylécaché = html`<span id='stylé'>${plutôtstylé}</span>`;
+// var stylécaché = html`<span id='stylé'></span>`; // ancienne bidouille ////
+""" * (plutôtvoir ? "var stylécaché = html`<span id='stylé'></span>`;" : "") * raw"""
 function styléoupas() { 
 	var stylé = document.getElementById("stylé");
 	var cachémoiplutôt = document.getElementById("cachémoiplutôt");
@@ -1630,28 +1775,27 @@ for(let j=0; j<(Object.keys(touslestemps).length); j++){
 	});
 };
 return editCSS;
-</script>"""); bonusetastuces = md"""#### $(html"<div id='Bonus' style='user-select: none; margin-top: 17px !important;'>Bonus : le sudoku en cours pour plus tard...</div>") 
+</script>"""); bonusetastuces = md"""$(html"<details open><summary style='list-style: none;'><h4 id='Bonus' style='margin-top: 17px; user-select: none;'>Bonus : le sudoku en cours pour plus tard…</h4></summary>") 
 Je conseille de garder le code du sudoku en cours (en cliquant, la copie est automatique ✨) 
-$(html"<input type=button id='clégén' value='Copier le code à garder :)'><input id='pour-définir-le-sudoku-initial' type='text' style='font-size: x-small; margin-right: 6px; max-width: 38px; background-color:#77777726; border: none; border-radius: 0 8px 8px 0; filter: opacity(89%);' />") **Note** : à coller ailleurs dans un bloc-notes par exemple 
+$(html"<input type=button id='clégén' value='Copier le code à garder :)'><input id='pour-définir-le-sudoku-initial' type='text' style='font-size: x-small; margin-right: 6px; max-width: 38px; background-color: var(--rule-color,#77777726); border: none; border-radius: 0 8px 8px 0; filter: opacity(89%);' />") **Note** : à coller ailleurs dans un bloc-notes par exemple 
 
-##### ...à retrouver comme d'autres vieux sudokus : 
-
+##### …à retrouver comme d'autres vieux sudokus : 
 Ensuite, dans une (nouvelle) session, cliquer dans _`Enter cell code...`_ tout en bas ↓ et coller le code qui fut gardé (cf. note ci-dessus).
-Enfin, lancer le code avec le bouton ▶ tout à droite (qui clignote justement). 
-Ce vieux sudoku est restoré en place du Retour instantané ! (cela [retourne en haut ↑](#ModifierInit) de la page) 
+Enfin, lancer le code avec le bouton ▷ tout à droite (qui clignote justement). 
+Ce vieux sudoku est restoré en place du _Retour instantané !_ (cela [retourne en haut ↑](#ModifierInit)) 
 	
-$(html"<details open><summary style='list-style: none;'><h6 id='BonusAstuces' style='display:inline-block;user-select: none;'> Autres petites astuces :</h6></summary><style>details[open] summary::after {content: ' (cliquer ici pour les cacher)';} summary:not(details[open] summary)::after {content: ' (cliquer ici pour les revoir)';}</style>")
+$(html"<details class='pli' open><summary style='margin-bottom: -13px; list-style: none;'><h5 id='BonusAstuces' style='display:inline-block; user-select: none;'> Autres astuces :</h5></summary><style>details[open].pli > summary::after {content: ' (cliquer ici pour les cacher)'; font-style: italic;} details.pli > summary:not(details[open].pli > summary)::after {content: ' (cliquer ici pour les revoir)'; font-style: italic;} details.pli > summary:not(details[open].pli > summary){margin-bottom: 0 !important;}</style>")
    1. Modifier le premier sudoku (à vider si besoin, grâce au premier choix) et cocher ensuite ce que l'on souhaite voir comme **aide ou solution** ; le sudoku du dessous répond ainsi aux ordres. Cocher `🤫 Cachée` pour revoir des indications sur l'emploi des cases 
    2. Il est possible de bouger avec les flèches, aller à la ligne suivante automatiquement (à la _[Snake](https://www.google.com/search?q=Snake)_). Il y a aussi des raccourcis, comme `H` = haut, `V` ou `G` = gauche, `D` `J` `N` = droite, `B` = bas. Ni besoin de pavé numérique, ni d'appuyer sur _Majuscule_, les touches suivantes sont idendiques `1234 567 890` = `AZER TYU IOP` = `&é"' (-è _çà` 
    3. On peut **remonter la solution** au lieu du premier sudoku en cliquant sur le texte [Sudoku initial ⤴…](#va_et_vient) et pour revenir au sudoku initial modifiable [↪ Cliquer…](#lignenonvisible) sur le texte qui apparait juste en dessous 
-   4. Pour information, la fonction **vieuxSudoku!**(), ou **vieux**() ou **vs**(), sans paramètre permet de générer un sudoku aléatoire. En mettant un nombre, par exemple **vieuxSudoku!(62**) : ce sera le total de cases vides du sudoku aléatoire construit. Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieuxSudoku!**(**0:81**) : un nombre aléatoire dans cet intervalle sera utilisé. Pour les sudokus aléatoires, le fait de recliquer sur le bouton ▶ en génère un nouveau 
+   4. Pour information, la fonction **vieuxSudoku!**(), ou **vieux!**() ou **vs**(), sans paramètre permet de générer un sudoku aléatoire. En mettant un nombre, par exemple **vieuxSudoku!(62**) : ce sera le total de cases vides du sudoku aléatoire construit. Enfin, en mettant un intervalle, sous la forme **début : fin**, par exemple **vieux!**(**0:81**) : un nombre aléatoire dans cet intervalle sera utilisé. Pour les sudokus aléatoires, le fait de recliquer sur le bouton ▷ en génère un nouveau 
    5. Le code de ce programme en [_Julia_](https://fr.wikipedia.org/wiki/Julia_(langage_de_programmation)) est observable en cliquant d'abord sur $(html"<input type=button id='plutot' value='Ceci 📝🤓'>") pour basculer sur l'interface de $plutoojl, puis en cliquant sur l'œil 👁 à côté de chaque cellule. Il est aussi possible de télécharger ce calepin $calepin ou en $caleweb
-$(html"</details>")
+$(html"</details></details>")
 $pourvoirplutôt 
 $stylélàbasavecbonus
 $pourgarderletemps"""
 
-# ╔═╡ a2345678-7654-3210-b011-123456789010
+# ╔═╡ abde0010-0010-0011-0010-0011dabe0010
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1664,7 +1808,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.3"
+julia_version = "1.9.1"
 manifest_format = "2.0"
 project_hash = "fa3e19418881bf344f5796e1504923a7c80ab1ed"
 
@@ -1681,16 +1825,16 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 """
 
 # ╔═╡ Cell order:
-# ╟─a2345678-7654-3210-b002-123456789001
-# ╟─a2345678-7654-3210-b004-123456789002
-# ╟─a2345678-7654-3210-b003-123456789003
-# ╟─a2345678-7654-3210-b006-123456789004
-# ╟─a2345678-7654-3210-b005-123456789005
-# ╟─a2345678-7654-3210-b007-123456789006
-# ╟─a2345678-7654-3210-b008-123456789007
-# ╟─a2345678-7654-3210-b009-123456789008
-# ╟─a2345678-7654-3210-b010-123456789009
-# ╠═a2345678-7654-3210-b011-123456789010
-# ╟─a2345678-7654-3210-b001-123456789011
+# ╟─abde0002-0001-0002-0001-0002dabe0001
+# ╟─abde0004-0002-0004-0002-0004dabe0002
+# ╟─abde0003-0003-0003-0003-0003dabe0003
+# ╟─abde0006-0004-0006-0004-0006dabe0004
+# ╟─abde0005-0005-0005-0005-0005dabe0005
+# ╟─abde0007-0006-0007-0006-0007dabe0006
+# ╟─abde0008-0007-0008-0007-0008dabe0007
+# ╟─abde0009-0008-0009-0008-0009dabe0008
+# ╟─abde0010-0009-0010-0009-0010dabe0009
+# ╠═abde0010-0010-0011-0010-0011dabe0010
+# ╟─abde0001-0011-0001-0011-0001dabe0011
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
