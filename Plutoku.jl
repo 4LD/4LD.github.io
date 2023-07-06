@@ -18,7 +18,7 @@ end
 begin 
 	# @bind bindJSudoku Sudini # et son javascript est inclus au plus haut
 	# stylélàbasavecbonus! ## voir juste dans la cellule #Bonus au dessus ↑
-	const plutôtvoir = false # Plutôt voir l'interface de Pluto.jl (false → cachée)
+	const plutôtvoir = false # true # Plutôt voir l'interface de Pluto.jl (true voir)
 	const àcorriger = "😜 Merci de corriger le Sudoku", md"""###### 😜 Merci de revoir le Sudoku modifiable, il n'est pas conforme : 
 		En effet, il doit y avoir **un chiffre en double** au moins sur une ligne ou colonne ou carré 😄"""
 	const impossible = "🧐 Sudoku faux et impossible", md"""###### 🧐 Sudoku faux et impossible à résoudre :
@@ -685,9 +685,9 @@ begin
 						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
 						if (!(isNaN(vale))) {
 							cible.value = cible.value == vale ? 0 : vale ; 
-							e.target.classList.remove("vide");
+							// e.target.classList.remove("vide");
 							e.target.classList.remove("cachée");
-							e.target.classList.toggle("ini"); // ini bleu ou vide
+							e.target.classList.toggle("ini"); // ini bleu ou cachée
 							e.target.classList.add("gris"); 
 							/* cible.value = vale; 
 							e.target.classList.remove("vide");
@@ -707,51 +707,50 @@ begin
 				for(let granj=0; granj<9;granj++){ 
 				 if ( !(grantb.childNodes[grani].childNodes[granj].classList.contains("ini")) ) {
 				grantb.childNodes[grani].childNodes[granj].classList.add("cachée");
+				grantb.childNodes[grani].childNodes[granj].classList.remove("gris");
 				
 				} }};
 			});
 		});
 		
-		let tds = _sudoku.querySelectorAll('td.cachée');
+		let tds = _sudoku.querySelectorAll('td.vide');
   		tds.forEach(td => {
 				
 			td.addEventListener('click', (e) => {
-				if (document.getElementById("caroligne")) {
-					if (document.getElementById("caroligne").checked) {	
-						const ilig = e.target.getAttribute('data-row');
-						const jcol = e.target.getAttribute('data-col'); 
-						const orNicar = (lign, colo) => Math.floor(ilig/3)==Math.floor(lign/3) && Math.floor(jcol/3)==Math.floor(colo/3) ;
-						var grantb = e.target.parentElement.parentElement;
-						for(let grani=0; grani<9;grani++){ 
-						for(let granj=0; granj<9;granj++){ 
-						 var tdf = grantb.childNodes[grani].childNodes[granj];
-						 if (tdf.getAttribute('data-row') == ilig || tdf.getAttribute('data-col') == jcol || orNicar(tdf.getAttribute('data-row'),tdf.getAttribute('data-col')) ) {
-						  tdf.classList.remove("cachée");
-						} }};
-					} else {
-					e.target.classList.toggle("cachée");
-				}};
+				if (document.getElementById("caroligne")?.checked) {	
+					const ilig = e.target.getAttribute('data-row');
+					const jcol = e.target.getAttribute('data-col'); 
+					const orNicar = (lign, colo) => Math.floor(ilig/3)==Math.floor(lign/3) && Math.floor(jcol/3)==Math.floor(colo/3) ;
+					var grantb = e.target.parentElement.parentElement;
+					for(let grani=0; grani<9;grani++){ 
+					for(let granj=0; granj<9;granj++){ 
+					 var tdf = grantb.childNodes[grani].childNodes[granj];
+					 if (tdf.getAttribute('data-row') == ilig || tdf.getAttribute('data-col') == jcol || orNicar(tdf.getAttribute('data-row'),tdf.getAttribute('data-col')) ) {
+					  tdf.classList.remove("cachée"); // ciel gris
+					} }};
+				} else {
+				e.target.classList.toggle("cachée");
+				if(document.getElementById("choixàmettreenhaut")?.checked==false && !(e.target.classList.contains("ini")) ){e.target.classList.remove("gris")}; };
 				// e.target.classList.toggle("cachée");
-					
-				if (document.getElementById("choixàmettreenhaut")) {
-					if (document.getElementById("choixàmettreenhaut").checked) {
-						const lign = parseInt(e.target.getAttribute("data-row")) + 1;
-						const colo = parseInt(e.target.getAttribute("data-col")) + 1;
-						const vale = e.target.innerHTML;
-						var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
-						if (!(isNaN(vale))) {
-							cible.value = cible.value == vale ? 0 : vale ; 
-							e.target.classList.remove("vide");
-							e.target.classList.remove("cachée");
-							e.target.classList.toggle("ini"); // ini bleu ou vide
-							e.target.classList.add("gris"); 
-							/* cible.value = vale; 
-							e.target.classList.remove("vide");
-							e.target.classList.add("ini"); */
-							// document.getElementById("tesfoot")?.dispatchEvent(new Event("click"));
-							cible.dispatchEvent(new Event('ctop')); 
-						};
-				}}; 
+				
+				if (document.getElementById("choixàmettreenhaut")?.checked) {
+					const lign = parseInt(e.target.getAttribute("data-row")) + 1;
+					const colo = parseInt(e.target.getAttribute("data-col")) + 1;
+					const vale = e.target.innerHTML;
+					var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
+					if (!(isNaN(vale))) {
+						cible.value = cible.value == vale ? 0 : vale ; 
+						// e.target.classList.remove("vide");
+						e.target.classList.remove("cachée");
+						e.target.classList.toggle("ini"); // ini bleu ou cachée
+						e.target.classList.add("gris"); 
+						/* cible.value = vale; 
+						e.target.classList.remove("vide");
+						e.target.classList.add("ini"); */
+						// document.getElementById("tesfoot")?.dispatchEvent(new Event("click"));
+						cible.dispatchEvent(new Event('ctop')); 
+					};
+				}; 
 				
 			});
 		});	""")*raw"""
@@ -941,26 +940,25 @@ begin
 				tdmini.forEach(td => {
 					td.addEventListener('click', (e) => {
 						
-						if (document.getElementById("choixàmettreenhaut")) {
-							if (document.getElementById("choixàmettreenhaut").checked) {
-								const lign = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row')) + 1; // 3 et 2+3
-								const colo = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col')) + 1;
-								const vale = e.target.innerHTML; // pas utile dans ce cas !
-								var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
-								if (!(isNaN(vale))) {
-									cible.value = cible.value == vale ? 0 : vale ; 
-									// e.target.classList.toggle("ini"); // ini bleu
-									if (e.target.classList.contains("ini")) {
-										e.target.classList.remove("ini");} else {
-	e.target.parentElement.parentElement.childNodes.forEach(tr => {
-		tr.childNodes.forEach(tdd => {
-										tdd.classList.remove("ini");
-										})}); e.target.classList.add("ini");};
-									e.target.classList.add("gris"); 
-									// document.getElementById("tesfoot")?.dispatchEvent(new Event("click"));
-									cible.dispatchEvent(new Event('ctop')); 
-								};
-						}};	
+						if (document.getElementById("choixàmettreenhaut")?.checked) {
+							const lign = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-row')) + 1; // 3 et 2+3
+							const colo = parseInt(e.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-col')) + 1;
+							const vale = e.target.innerHTML; // NaN → pas besoin
+							var cible = document.querySelector("#sudokincipit > tbody > tr:nth-child("+ lign +") > td:nth-child("+ colo +") > input[type=text]");
+							if (!(isNaN(vale))) {
+								cible.value = cible.value == vale ? 0 : vale ; 
+								// e.target.classList.toggle("ini"); // ini bleu
+								if (e.target.classList.contains("ini")) {
+									e.target.classList.remove("ini");} else {
+e.target.parentElement.parentElement.childNodes.forEach(tr => {
+	tr.childNodes.forEach(tdd => {
+									tdd.classList.remove("ini");
+									})}); e.target.classList.add("ini");};
+								e.target.classList.add("gris"); 
+								// document.getElementById("tesfoot")?.dispatchEvent(new Event("click"));
+								cible.dispatchEvent(new Event('ctop')); 
+							};
+						};	
 						
 				})}); """)*raw"""};
 
@@ -972,11 +970,9 @@ begin
 					const orNicar = (tlig,tcol) => MMcar(granlig,grancol,tlig,tcol);
 					e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
 						tr.childNodes.forEach(tdd => {
-
 							if ((tdd.childNodes[0].childNodes[1]!=null) && (tdd.getAttribute('data-row') == granlig || tdd.getAttribute('data-col') == grancol || orNicar(tdd.getAttribute('data-row'),tdd.getAttribute('data-col')) )){
-								//tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.remove("cachée");
-								tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.remove("cachée");
-								} });
+								tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.remove("cachée"); // ciel gris
+							} });
 					});
 				}; 
 
@@ -988,11 +984,10 @@ begin
 					const orNicar = (tlig,tcol) => MMcar(granlig,grancol,tlig,tcol);
 					e.target.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.childNodes.forEach(tr => {
 						tr.childNodes.forEach(tdd => {
-
 							if ((tdd.childNodes[0].childNodes[1]!=null) && (tdd.getAttribute('data-row') == granlig || tdd.getAttribute('data-col') == grancol || orNicar(tdd.getAttribute('data-row'),tdd.getAttribute('data-col')) )){
 								tdd.childNodes[0].childNodes[1].childNodes.forEach(ligne => {
-									ligne.childNodes.forEach(colon => {
-									colon.classList.remove("cachée");
+								  ligne.childNodes.forEach(colon => {
+									colon.classList.remove("cachée"); // ciel gris
 								  });
 								}); 
 							} });
@@ -1006,6 +1001,7 @@ begin
 							tr.childNodes.forEach(tdd => {
 								if (tdd.childNodes[0].childNodes[1]!=null){
 									tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.toggle("cachée");
+									if(document.getElementById("choixàmettreenhaut")?.checked==false){tdd.childNodes[0].childNodes[1].childNodes[ilig].childNodes[jcol].classList.remove("gris")};
 							}});
 					});		
 				};
@@ -1014,27 +1010,26 @@ begin
 				justeremonte(tdmini);
 				tdmini.forEach(td => {
 					td.addEventListener('click', (e) => {		
-					if (document.getElementById("caroligne")) {
-						if (document.getElementById("caroligne").checked) {	
-							casecarolign(e);
-						} else {
+					if (document.getElementById("caroligne")?.checked) {	
+						casecarolign(e);
+					} else {
 						e.target.parentElement.parentElement.childNodes.forEach(ligne => {
 						  ligne.childNodes.forEach(colon => {
 							colon.classList.toggle("cachée");
+							if(document.getElementById("choixàmettreenhaut")?.checked==false){colon.classList.remove("gris")};
 						  });
 						}); 
-					}} });	
+					} });	
 				}) };
 				
 				const tousleségalitios = (tdmini) => { // 2 et 1
 				justeremonte(tdmini);
 				tdmini.forEach(td => {
 					td.addEventListener('click', (e) => {
-						"""*(somme ? raw"""if (document.getElementById("caroligne")) {
-							if (document.getElementById("caroligne").checked) {	
+						"""*(somme ? raw"""if (document.getElementById("caroligne")?.checked) {	
 								carolign(e);
 							} else {
-								tousleségalit(e) }};
+								tousleségalit(e) };
 						""" : raw"""tousleségalit(e); """)*raw"""
 				})}) };
 				
@@ -1042,11 +1037,11 @@ begin
 				justeremonte(tdmini);
 				tdmini.forEach(td => {
 					td.addEventListener('click', (e) => {
-					if (document.getElementById("caroligne")) {
-						if (document.getElementById("caroligne").checked) {
-							carolign(e);
-						} else {
-						e.target.classList.toggle("cachée")}};
+					if (document.getElementById("caroligne")?.checked) {
+						carolign(e);
+					} else {
+						e.target.classList.toggle("cachée");
+						if(document.getElementById("choixàmettreenhaut")?.checked==false){e.target.classList.remove("gris")} };
 				}) }) }; 
 				
 				const touteffacer = (tdbleus) => {
@@ -1059,6 +1054,7 @@ begin
 							for(let minii=0; minii<3;minii++){ 
 							for(let minij=0; minij<3;minij++){ 
 							grantb.childNodes[grani].childNodes[granj].childNodes[0].childNodes[1].childNodes[minii].childNodes[minij].classList.add("cachée");
+							grantb.childNodes[grani].childNodes[granj].childNodes[0].childNodes[1].childNodes[minii].childNodes[minij].classList.remove("gris");
 							
 							}} } }};
 						});
@@ -1668,7 +1664,8 @@ stylélàbasavecbonus = #= style CSS pour le sudokuHTML, le code principal est d
 	table.sudokool tr td.ini {
 		font-weight: bold;
 		color: var(--cm-var-color, #afb7d3);}
-	table.sudokool tr td.ini.gris {
+	table.sudokool tr td.ini.gris, 
+	table.sudokoolmini td.vide.ini {
 		font-style: italic;
 		color: var(--cm-var-color, #afb7d3);}
 	table.sudokool tr td.vide {color: var(--cm-property-color, #f99b15);}
@@ -1808,7 +1805,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.1"
+julia_version = "1.9.3"
 manifest_format = "2.0"
 project_hash = "fa3e19418881bf344f5796e1504923a7c80ab1ed"
 
