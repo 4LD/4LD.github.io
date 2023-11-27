@@ -9,7 +9,7 @@ Voilà ! **au début**, il faut cependant **être un peu patient** : le temps du
 
 ##### Mémo perso : Trois autres moyens de relancer, uniquement si cela ne fonctionne pas : 
 > **Première :** 
-> Cliquer sur la version longue du lien plus haut : https://binder.plutojl.org/open?url=https%253A%252F%252Fraw.githubusercontent.com%252F4LD%252F4LD.github.io%252Fmain%252FPlutoku.jl ou https://ovh.mybinder.org/v2/gh/fonsp/pluto-on-binder/master?urlpath=pluto/open?url=https://raw.githubusercontent.com/4LD/4LD.github.io/main/Plutoku.jl ou https://mybinder.org/v2/gh/fonsp/pluto-on-binder/master?urlpath=pluto/open?url=https://raw.githubusercontent.com/4LD/4LD.github.io/main/Plutoku.jl ou https://mybinder.org/v2/gh/4LD/pluto-on-binder/main?urlpath=pluto/open?url=https://raw.githubusercontent.com/4LD/4LD.github.io/main/Plutoku.jl
+> Cliquer sur la version longue du lien plus haut : https://binder.plutojl.org/open?url=https%253A%252F%252Fraw.githubusercontent.com%252F4LD%252F4LD.github.io%252Fmain%252FPlutoku.jl ou https://ovh.mybinder.org/v2/gh/fonsp/pluto-on-binder/HEAD?urlpath=pluto/open?url=https://raw.githubusercontent.com/4LD/4LD.github.io/main/Plutoku.jl ou https://mybinder.org/v2/gh/fonsp/pluto-on-binder/HEAD?urlpath=pluto/open?url=https://raw.githubusercontent.com/4LD/4LD.github.io/main/Plutoku.jl ou https://mybinder.org/v2/gh/4LD/pluto-on-binder/main?urlpath=pluto/open?url=https://raw.githubusercontent.com/4LD/4LD.github.io/main/Plutoku.jl
 > 
 > **Deuxième, un peu plus complexe :** 
 > Cliquer sur le lien https://ovh.mybinder.org/v2/gh/fonsp/pluto-on-binder/HEAD?urlpath=pluto 
