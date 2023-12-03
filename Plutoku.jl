@@ -94,17 +94,17 @@ begin
 	mutable struct Sisenettoie # c'est donc ton …
 		statut::Int # 1 à nettoyer, 2 et plus à prénettoyer
 		const dernier::Case # dernière case vue
-	end
+	end # Pour garder le compte par chiffre (1 = unique ; # = voir ex. uniclk!)
 	struct Dicompte # Ensemble de dico pour compter chaque chiffre possible par…
 		lig::Dict{Int, Dict{Int,Sisenettoie} } # ligne
 		col::Dict{Int, Dict{Int,Sisenettoie} } # col…
 		car::Dict{Int, Dict{Int,Sisenettoie} } 
 		ful::Dict{Int, Set{Int}}	# fusible ligne
-		fuc::Dict{Int, Set{Int}}	# déjà grillé
+		fuc::Dict{Int, Set{Int}}	# déjà grillé (car sur plusieurs carrés)
 		fuk::Dict{Int, Set{Int}}
 	end
 	Dicompte() = Dicompte((Dict{Int,Dict{Int,Sisenettoie}}() for _ in 1:3)..., (Dict{Int,Set{Int}}() for _ in 1:3)...)
-	function getfun!(d::Dicompte, i::Int, j::Int, k::Int)
+	function getfun!(d::Dicompte, i::Int, j::Int, k::Int) # juste get! (func)
 		get!(d.lig, i, Dict{Int,Sisenettoie}() )
 		get!(d.col, j, Dict{Int,Sisenettoie}() )
 		get!(d.car, k, Dict{Int,Sisenettoie}() )
@@ -138,10 +138,10 @@ begin
 	Dicombo() = Dicombo(Dict{Int,Dict{Set{Int},Set{Int}}}(), Dict{Int,Dict{Set{Int},Set{Int}}}(), Dict{Int,Dict{Set{Int},Set{Tuple{Int,Int}}}}())
 	
 	struct Choix # choixAfaire
-		c::Case 	# choix à placer ?
+		c::Case 	# cas∙e à placer
 		n::Int 		# nb de choix pris
 		max::Int 	# nb d choix max
-		rcl::Set{Int} # liste des choix qui reste
+		rcl::Set{Int} # liste de choix restants
 	end
 	Choix()=Choix(Case(0,0,0,0:0,0:0),0,0,Set{Int}())
 	
@@ -161,7 +161,7 @@ begin
 			push!(carrés[kelcarré(i, j)], chiffre)
 			end
 		end
-		return true # Le sudoku semble conforme (mais il peut être impossible)
+		return true # Le sudoku semble conforme (mais il peut être impossible 😜)
 	end
 	function ajoute(mat::Matrix{Int}, c::Case,i::Int,j::Int,k::Int, 
 			n::Int,lesZérosàSuppr::Set{Case},dz::Dicoréz) # dans la matrice - zéro
@@ -213,14 +213,14 @@ begin
 	 end
 	end
 	function uniclk!(nbs::Dicompte, çaNavancePas::Bool, mat::Matrix{Int}, lesZérosàSuppr::Set{Case}, soréz::Dicoréz, dimp::Dict{Tuple{Int,Int}, Set{Int}}) #… voir si un chiffre est seul (ou uniquement sur une même ligne, col…). Car par exemple, s'il apparaît une seule fois sur la ligne : c'est qu'il ne peut qu'être là ^^
-	# Autres exemple, si dans une ligne, il n'y a d'occurence que dans un des 3 carré, il ne pourra pas être ailleurs dans le carré.
+	# Autres exemple, si dans une ligne, il n'y a d'occurence que dans un des 3 carré : il ne pourra pas être ailleurs dans ce carré (que sur cette ligne)
 	 for (i, nbsi) in nbs.lig # Pour les lignes
 		for (n, nbsin) in nbsi 
-			if nbsin.statut == 2 
+			if nbsin.statut == 2 ## cf. autres ex plus haut, carré à nettoyer
 				for (l, c) in setdiff(soréz.car[nbsin.dernier.k], ((i, c) for c in nbsin.dernier.jj))
 					push!(get!(dimp,(l,c),Set{Int}() ), n)
 				end
-			else # if nbsin.statut == 1
+			else # if nbsin.statut == 1 ## l'unique, on le saura (≠ Sauron)
 				j = nbsin.dernier.j
 				k = nbsin.dernier.k
 				n ∉ chiPossible(mat, nbsin.dernier, 
@@ -280,7 +280,7 @@ begin
 	# C'est pas faux : donc ça va. 
 	# De plus, si un (ensemble de) chiffre est possible que sur certaines cellules, cela le retire du reste (en gardant via la matrice Nimp). Par exemple, sur une ligne, on a 1 à 8, la dernière cellule ne peut que être 9 -> grâce à Nimp, on retire le 9 des possibilités de toutes les cellules de la colonne, du carré (et de la ligne…) sauf pour cette dernière cellule justement ^^
 	# Cela permet de limiter les possibilités pour éviter au mieux les culs de sac!
-	# Etant quand-même un peu trop lourd, il faut l'utiliser que si besoin
+	# Etant quand-même un peu trop lourd, il faut l'utiliser que si besoin (c'est souvent utile :)
 	 i, j, k = c.i, c.j, c.k # (; i, j, k) = c # i, j, k = c si Base.iterate
 	 for (l,v) in collect(get!(permu.lig, i, Dict{Set{Int}, Set{Int}}())) # dili # Pour les lignes
 		kk = union(l,listepossibles)
@@ -1001,15 +1001,15 @@ const removClass=(id,classe)=>{document.getElementById(id).classList.remove(clas
 		x=fun(x)
 	end
 	x = (0 <= x < 82) ? x : 81 # Pour ceux aux gros doigts, ou qui voit trop grand
-	# liste = shuffle!([(i,j) for i in 1:9 for j in 1:9])
-	liste = shuffle!(collect(Set([(i,j) for i in 1:9 for j in 1:9])))
+	### liste = shuffle!([(i,j) for i in 1:9 for j in 1:9]) ## vrai shuffle
+	liste = shuffle!(collect(Set([(i,j) for i in 1:9 for j in 1:9]))) # infox
 	for (i,j) in liste[1:x] # nbApproxDeZéros
 		matzéro[i,j] = 0
 	end
 	return matriceàlisteJS(matzéro)
   end
 
-  function vieuxSudoku!(nouveau=sudokuAléatoire() ; défaut=false, remonte=true, mémoire=SudokuMémo, matzéro=sudokuAléatoireFini(), idLien="lien"*string(rand(Int)))
+  function vieuxSudoku!(nouveau=sudokuAléatoire() ; défaut=false, r=true, remonte=true, mémoire=SudokuMémo, matzéro=sudokuAléatoireFini(), idLien="lien"*string(rand(Int)))
   # On peut retrouver un vieuxSudoku! pour le mettre au lieu du sudoku initial
   ## Exemple de sudoku :
   # vieuxSudoku!([[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,3,0,8,5],[0,0,1,0,2,0,0,0,0],[0,0,0,5,0,7,0,0,0],[0,0,4,0,0,0,1,0,0],[0,9,0,0,0,0,0,0,0],[5,0,0,0,0,0,0,7,3],[0,0,2,0,1,0,0,0,0],[0,0,0,0,4,0,0,0,9]])
@@ -1021,7 +1021,7 @@ const removClass=(id,classe)=>{document.getElementById(id).classList.remove(clas
 		mémoire[2] = mémoire[3] = sudokuAléatoire()
 	else mémoire[2] = mémoire[3] = copy(nouveau) # Astuce pour sauver le sudoku en cours
 	end
-	làhaut = (remonte ? "" : "// ")
+	làhaut = (remonte && r ? "" : "// ")
 	return Docs.HTML("<script>
 	const ele = document.getElementsByName('ModifierInit');
 	for(let ni=0;ni<ele?.length;ni++)
@@ -1036,12 +1036,12 @@ const removClass=(id,classe)=>{document.getElementById(id).classList.remove(clas
 	</script><h6 style='margin-top: 0;'> Ci-dessous, le bouton ▶ restore le vieux sudoku en sudoku initial ! 🥳 <a id='$idLien' href='#ModifierInit'> retour en haut ↑ </a> </h6>")
   end
   vieux = vieux! = vs = vs! = vS! = vieuxSudoku! ## mini version
-  vsd() = vieuxSudoku!(défaut=true) ## Pour revenir à l'original
+  vsd(;kwargs...) = vieuxSudoku!(;défaut=true,kwargs...) ## Pour revenir à l'original
   ini = défaut = defaut = vsd ## mini version
-  vsr() = vieuxSudoku!(0) ## Pour partir d'un sudoku rempli ou fini ^^
+  vsr(;kw...) = vieuxSudoku!(0 ;kw...) ## Pour partir d'un sudoku rempli ou fini ^^
   vsf = vsaf = vsr ## mini version
-  sudokuinitial!() = vieuxSudoku!(SudokuMémo[3])
-  vieuxSudoku!(nouveau::Matrix{Int} ; défaut=false, mémoire=SudokuMémo, matzéro=sudokuAléatoireFini(), idLien="lien"*string(rand(Int))) = vieuxSudoku!(matriceàlisteJS(nouveau'); défaut=défaut, mémoire=mémoire, matzéro=matzéro, idLien=idLien)
+  sudokuinitial!(;kw...) = vieuxSudoku!(SudokuMémo[3] ;kw...)
+  vieuxSudoku!(nouv::Matrix{Int} ;kwargs...) = vieuxSudoku!(mjs(nouv') ;kwargs...)
 end; nothing; # stylélàbasavecbonus! ## dans la cellule #Bonus au dessus ↑
 
 ##bid ╔═╡ be2c43a8-7001-7001-7001-bbbeebbbaa01
