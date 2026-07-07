@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plutoku — Résoudre un Sudoku</title>
+  <!-- ── PlutokuJS v1.8.9 bêta mardi 07/07/2026 🎈 ── -->
+  <style>
+    /* ── CSS extrait de stylélàbasavecbonus dans PlutokuNext.jl ── */
+    body { font-family: sans-serif; margin: 16px auto; max-width: 742px; padding: 0 8px; box-sizing: border-box; background: #fff; color: #333; }
+    h2 { margin-bottom: 4px; }
+    input[type="button"] { background-color: #aaa; color: black; border: 2px outset #bbb; border-radius: 2px; cursor: pointer; padding: 2px 8px; }
+    input[type="button"]:hover, input[type="button"]:active { background-color: #777; color: white; border: 2px solid #777; }
+    #taide, #tesfoot, #va_et_vient { user-select: none; }
+    #sudokufini, #copiefinie { cursor: pointer; }
+    input[type="radio"] { margin: 3px 0; }
+    .pasla, .maistesou { filter: opacity(62%) blur(2px); pointer-events: none; }
+    tr#lignenonvisible { border-top: hidden; }
+    /* Grille sudoku */
+    table.sudokool { border: hidden; border-collapse: collapse; margin-block-start: 0; margin-block-end: 0; }
+    table.sudokool tr { border: 0; }
+    table.sudokool tr.troisr { border-top: 3px solid #555; }
+    table.sudokool tr td { border: 1px solid #777; padding: 0 !important; }
+    table.sudokool tr td.troisd { border-left: 3px solid #555; }
+    table.sudokool tr td input { text-align: center; font-size: 14pt; width: 100%; height: 100%; background-color: transparent; border: 0; outline: none; }
+    table.sudokool tr td input:focus-visible { outline: 2px solid #4a5fa0; outline-offset: -2px; border-radius: 0; }
+    table.sudokool tr td.damier { background-color: #e8e8e8; }
+    table.sudokool tr td { user-select: none; text-align: center; font-size: 14pt; width: 38px; height: 38px; }
+    table.sudokool tr td.ini  { font-weight: bold; color: #4a5fa0; }
+    table.sudokool tr td.ini.gris { font-style: italic; color: #4a5fa0; }
+    table.sudokool tr td.vide   { color: #a05500; }
+    table.sudokool tr td.cachée { color: transparent !important; }
+    table.sudokool tr td.gris   { color: #777; font-style: italic; }
+    /* Animation doublons */
+    table.sudokool tr td input.endouble {
+      background-color: #ffcccc; border: 2px solid #ff3333;
+      box-shadow: 0 0 6px rgba(255,0,0,.8) inset; color: #c00; font-weight: bold;
+      animation: endouble-shake .3s ease-in-out;
+    }
+    @keyframes endouble-shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-3px); }
+      75%     { transform: translateX(3px); }
+    }
+    /* Mini-grille (aide) */
+    table.sudokoolmini { border: hidden !important; border-collapse: collapse; margin: 0; }
+    table.sudokoolmini tr, table.sudokoolmini tr td { border: 0 !important; }
+    table.sudokoolmini tr td { user-select: none; text-align: center; font-size: 7.5pt; width: 12px; height: 11.7px; color: #a05500; }
+    table.sudokoolmini tr td.cachée { color: transparent !important; }
+    /* Layout */
+    .row    { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; margin: 6px 0; }
+    #nouveau-histo-row { align-items: center; }
+    #modifier-init-row { align-items: center; }
+    #modifier-init-row > span { display: inline-flex; align-items: center; gap: 2px; }
+    .sep    { border-bottom: 2px dotted #bbb; margin: 8px 0; }
+    #stats  { font-style: italic; color: #555; margin: 4px 0; min-height: 1.2em; }
+    #helper { padding: 12px 0; color: #555; }
+    label   { margin-right: 12px; cursor: pointer; }
+    #divers { margin-top: 8px; font-style: italic; color: #4a5fa0; }
+    body.dark { background: #1e1e1e; color: #ccc; }
+    body.dark table.sudokool tr td.damier { background-color: #2a2a2a; }
+    body.dark table.sudokool tr.troisr    { border-top-color: #aaa; }
+    body.dark table.sudokool tr td        { border-color: #aaa; }
+    body.dark table.sudokool tr td.troisd { border-left-color: #aaa; }
+    /* ── Accessibilité supplémentaire ── */
+    input[type="button"]:disabled { opacity: 0.42; cursor: not-allowed; }
+    /* Dark mode — textes de statut et champs */
+    body.dark #stats  { color: #c8c8c8; }
+    body.dark #helper { color: #c8c8c8; }
+    body.dark #divers { color: #a8b8d8; }
+    body.dark .sep    { border-color: #555; }
+    body.dark table.sudokool tr td.ini     { color: #a8b8d8; }
+    body.dark table.sudokool tr td.ini.gris { color: #a8b8d8; }
+    body.dark table.sudokool tr td.vide    { color: #f0a030; }
+    body.dark table.sudokoolmini tr td     { color: #f0a030; }
+    body.dark table.sudokool tr td input:focus-visible { outline-color: #a8b8d8; }
+    body.dark #code-display { background: #2a2a2a !important; color: #ccc; }
+    body.dark #paste-input  { background: #2a2a2a !important; color: #ccc; border-color: #555; }
+    body.dark details small { color: #b8b8b8; }
+    .bonus-note { font-size: x-small; color: #777; }
+    #import-options { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: 6px; line-height: 1.2; }
+    #import-options .import-option { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; }
+    #import-options .import-option > label { display: inline-flex; align-items: center; gap: 4px; margin-right: 0; }
+    #import-options input[type="checkbox"] { margin: 0; }
+    #import-options input[type="number"] { width: 2.4em; font-size: x-small; padding: 0 1px; text-align: center; }
+    body.dark .bonus-note { color: #b8b8b8; }
+    body.dark #import-options input[type="number"] { background: #2a2a2a; color: #ccc; border: 1px solid #555; }
+    body.dark #btn-reset    { color: #ff8888 !important; }
+    /* Dark mode — inputs sudoku et boutons */
+    body.dark table.sudokool tr td input { color: inherit; }
+    body.dark table.sudokool tr td.gris  { color: #b5b5b5; }
+    body.dark input[type="button"] { background-color: #4a4a4a; color: #ddd; border-color: #666; }
+    body.dark input[type="button"]:hover,
+    body.dark input[type="button"]:active { background-color: #707070; color: #fff; border-color: #888; }
+    body.dark input[type="button"]:disabled { background-color: #333; color: #666; }
+    body.dark #btn-reset { background-color: #4a1818; color: #ff9090 !important; border-color: #7a2828; }
+  </style>
+</head>
+<body>
+
+<h2>Résoudre un Sudoku <span id="BN" style="cursor:pointer;user-select:none;" title="Thème">😎</span></h2>
+
+<!-- ── Radio : Vider / Retour instantané ── -->
+<div class="row" id="modifier-init-row">
+  <span style="display:inline-flex;align-items:center;gap:4px;user-select:none;">
+    <input type="radio" id="mi-vider"   name="ModifierInit" value="Vider le sudoku initial"><label for="mi-vider">Vider le sudoku initial</label>
+  </span>
+  <span style="display:inline-flex;align-items:center;gap:4px;user-select:none;">
+    <input type="radio" id="mi-retour"  name="ModifierInit" value="Retour instantané ;)" checked><label for="mi-retour">Retour instantané ;)</label>
+  </span>
+  <input type="button" id="btn-snap" value="📷 instantané ;)" style="margin-left:0px;">
+  <a href="#bonus" style="padding-left:10px;border-left:2px dotted #bbb;">Bonus en ▽</a>
+</div>
+
+<!-- ── Historique et Sudoku aléatoire ── -->
+<div class="row" id="nouveau-histo-row">
+  <input type="button" id="btn-prev" value="← Préc." style="margin-left:8px;" disabled>
+  <input type="button" id="btn-next" value="Suiv. →" disabled>
+  <input type="button" id="btn-nouveau" value="🎲 Nouveau sudoku" style="margin-left:6px;">
+  <input type="range"  id="rng-difficulte" min="0" max="81" value="27" style="width:70px;margin-left:4px;" title="Nombre de cases à laisser vides (sur 81)">
+  <span id="lbl-difficulte" style="font-size:small;">27 cases vides (pour création aléatoire)</span>
+</div>
+
+<!-- ── Statistiques ── -->
+<div id="stats"></div>
+
+<!-- ── Grille initiale ── -->
+<div id="ini-container"></div>
+
+<!-- ── Va-et-vient label ── -->
+<h4 style="margin:4px 0;">
+  <span id="va_et_vient">Sudoku initial ⤴ (modifiable) et sa solution : </span>
+</h4>
+
+<div class="sep"></div>
+
+<!-- ── Radio : voir ou pas ── -->
+<div class="row" id="voir-ou-pas">
+  <span style="display:inline-block;user-select:none;">
+    <input type="radio" id="vop-cachee"  name="voirOuPas" value="cachée" checked>
+    <label for="vop-cachee">🤫 Cachée</label>
+  </span>
+  <span style="display:inline-block;user-select:none;">
+    <input type="radio" id="vop-toucher" name="voirOuPas" value="toucher">
+    <label for="vop-toucher">En touchant, entrevoir les chiffres…</label>
+  </span>
+  <span style="display:inline-block;user-select:none;">
+    <input type="radio" id="vop-tout"    name="voirOuPas" value="tout">
+    <label for="vop-tout">Pour toutes les cases, voir les chiffres…</label>
+  </span>
+</div>
+
+<!-- ── Radio : type d'aide ── -->
+<div class="row pasla" id="PossiblesEtSolution">
+  <span style="display:inline-block;user-select:none;">
+    <input type="radio" id="pos-chiffre"  name="propalOuSoluce" value="chiffre" checked>
+    <label for="pos-chiffre">…par chiffre</label>
+  </span>
+  <span style="display:inline-block;user-select:none;">
+    <input type="radio" id="pos-case"     name="propalOuSoluce" value="case">
+    <label for="pos-case">…par case 🔢</label>
+  </span>
+  <span id="puchoixàmettreenhaut-span" style="display:inline-block;user-select:none;">
+    <input type="radio" id="pos-total"    name="propalOuSoluce" value="total">
+    <label for="pos-total">…par total (minima = ✔)</label>
+  </span>
+  <span style="display:inline-block;user-select:none;">
+    <input type="radio" id="pos-solution" name="propalOuSoluce" value="solution">
+    <label for="pos-solution">…de la solution 🚩</label>
+  </span>
+</div>
+
+<!-- ── Options (caroligne + choixàmettreenhaut) ── -->
+<div id="divers" class="pasla" style="margin-top:8px;">
+  <span id="pucaroligne">
+    <input type="checkbox" id="caroligne" name="caroligne">
+    <label for="caroligne">Caroligne ⚔</label>
+  </span>
+  <span id="puchoixàmettreenhaut" style="margin-left:5%;">
+    <input type="checkbox" id="choixàmettreenhaut" name="choixàmettreenhaut">
+    <label for="choixàmettreenhaut">Cocher ici, puis toucher le chiffre à mettre dans le Sudoku initial</label>
+  </span>
+</div>
+
+<!-- ── Grille résultat / aide ── -->
+<div id="result-container"></div>
+
+<!-- ── Bonus ── -->
+<details id="bonus" style="margin-top:24px;">
+  <summary><strong>Bonus :</strong> Sauvegarder et restaurer le sudoku en cours</summary>
+  <p>
+    <br><input type="button" id="clégén" value="📄 Copier (standard)">
+    <input id="code-display" type="text" readonly style="font-size:x-small;max-width:400px;margin-left:6px;background:#f0f0f0;border:none;border-radius:4px;padding:2px 6px;">
+    ou 
+    <input type="button" id="btn-excel" value="🔢 Copier (tableur)" style="margin-left:6px;">
+    <br><small style="color:#777;">Coller le code standard dans le champ ci-dessous pour restaurer ; le format tableur se colle directement (dans Excel).</small>
+  </p>
+  <p>
+    Charger un sudoku depuis le presse-papiers : <input type="button" id="btn-coller" value="📋 Coller et charger">
+    <br>
+    <input id="paste-input" type="text" placeholder="coller un sudoku partout…" style="font-size:x-small;max-width:380px;margin-left:6px;background:#f0f0f0;border:1px solid #bbb;border-radius:4px;padding:2px 6px;">
+    <span id="import-options" class="bonus-note">
+      <span class="import-option">
+        <label>
+          <input type="checkbox" id="import-shift-rows">
+          Lignes manquantes à
+        </label>
+        <label>
+          décaler vers le bas : 
+          <input type="number" id="import-shift-rows-count" min="0" max="8" value="0">
+        </label>
+      </span>
+      <span class="import-option">
+        <label>
+          <input type="checkbox" id="import-shift-cols">
+          Colonnes manquantes à
+        </label>
+        <label>
+          décaler vers la droite :
+          <input type="number" id="import-shift-cols-count" min="0" max="8" value="0">
+        </label>
+      </span>
+    </span>
+  </p>
+  <p><em>Astuces :</em> Flèches + clavier pour naviguer : <kbd>B</kbd> = bas ↓, <kbd>H</kbd> = haut ↑, <kbd>G/V</kbd> = gauche ←, <kbd>D/J/N</kbd> = droite →</p>
+  <p style="border-top:1px dotted #bbb;margin-top:8px;padding-top:8px;">
+    <input type="button" id="btn-reset" value="🗑️ Réinitialiser cache et historique" style="color:#900;">
+    <span style="font-size:x-small;margin-left:8px;color:#777;">Repart du sudoku initial, efface la sauvegarde et l'historique de tous les sudokus précédents.</span>
+  </p>
+</details>
+
+<script src="PlutokuJS.js"></script>
+<script>
+'use strict';
+
+// ── Contrat de SudokuMémo ──────────────────────────────────────────────────────
+// SudokuMémo est un tableau global défini dans PlutokuJS.js (initialement 4 éléments).
+//
+//   [0]  grille vide        — jsvd()   — jamais modifié, sert de "blank" pour vider la grille
+//   [1]  snapshot courant   — adini()  — référence du bouton "Retour instantané" (btn-snap)
+//   [2]  état courant       — adini()  — mis à jour à chaque frappe dans la grille
+//   [3]  puzzle de départ   — adini()  — copié en [4] au démarrage pour amorcer l'historique
+//   [4+] historique         — copies   — navigation ←/→ (histoIdx pointe dans cette plage)
+//
+// Invariants :
+//   - histoIdx ∈ [4, SudokuMémo.length - 1]
+//   - SudokuMémo.length >= 5 après initApp (le push initial garantit au moins [4])
+//   - Pousser dans l'historique = SudokuMémo.push(deepCopyJsu(SudokuMémo[1]))
+//     → seulement si différent du dernier enregistré (isJsuEqual)
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ── État global ────────────────────────────────────────────────────────────────
+let currentSolution = null;   // [jsu_résolu, stats] ou null
+let gridTable       = null;   // la table#sudokincipit
+let histoIdx        = 4;      // position courante dans SudokuMémo[4+]
+const boundGridListeners = new WeakSet();
+const setStats = (type, text = '') => {
+  const el = document.getElementById('stats');
+  const msg = typeof text === 'string' ? text.trim() : '';
+  if (!msg) { el.textContent = ''; return; }
+  if (/^[⚠✅ℹ]/.test(msg)) { el.textContent = msg; return; }
+  const prefix = type === 'error' ? '⚠' : (type === 'success' ? '✅' : 'ℹ');
+  el.textContent = `${prefix} ${msg}`;
+};
+const persistCurrent = (jsu) => localStorage.setItem('plutoku-current', JSON.stringify(jsu));
+
+function updateHistoBtns() {
+  document.getElementById('btn-prev').disabled = histoIdx <= 4 || SudokuMémo.length <= 4;
+  document.getElementById('btn-next').disabled = histoIdx >= SudokuMémo.length - 1;
+}
+
+// ── Listener grille (partagé initApp + rebuildGrid) ─────────────────────────────
+function attachGridListener(table) {
+  if (boundGridListeners.has(table)) return;
+  boundGridListeners.add(table);
+  table.addEventListener('input', () => {
+    const data = table.value; // JSudoku col-major (set par makesudiniReactive)
+    if (!data || !Array.isArray(data)) return;
+    SudokuMémo[2] = data;
+    currentSolution = résoutSudoku(data);
+    const [, stats] = currentSolution;
+    setStats('info', typeof stats === 'string' ? stats : '');
+    updateDisplay();
+    persistCurrent(data);
+  });
+}
+
+// ── Historique : navigation + snapshot + reset ────────────────────────────────────
+function initHistorique() {
+  // Restauration localStorage
+  const saved = localStorage.getItem('plutoku-current');
+  if (saved) { try { const jsu = JSON.parse(saved); SudokuMémo[1] = SudokuMémo[2] = jsu; } catch {} }
+  // Amorçage historique
+  if (SudokuMémo.length === 4) SudokuMémo.push(deepCopyJsu(SudokuMémo[3]));
+  histoIdx = SudokuMémo.length - 1;
+
+  // Bouton snapshot
+  document.getElementById('btn-snap').addEventListener('click', () => {
+    SudokuMémo[1] = deepCopyJsu(SudokuMémo[2]); // snapshot
+    document.getElementById('mi-retour').checked = true;
+    if (!isJsuEqual(SudokuMémo[SudokuMémo.length - 1], SudokuMémo[1])) {
+      SudokuMémo.push(deepCopyJsu(SudokuMémo[1]));
+      histoIdx = SudokuMémo.length - 1;
+      updateHistoBtns();
+    }
+  });
+
+  // Navigation ←/→
+  const histoPrev = () => {
+    if (histoIdx > 4) {
+      histoIdx--; rebuildGrid(SudokuMémo[histoIdx]); updateHistoBtns();
+      const el = document.getElementById('btn-prev');
+      (el.disabled ? document.getElementById('btn-next') : el).focus();
+    } else document.getElementById('btn-next').focus();
+  };
+  const histoNext = () => {
+    if (histoIdx < SudokuMémo.length - 1) {
+      histoIdx++; rebuildGrid(SudokuMémo[histoIdx]); updateHistoBtns();
+      const el = document.getElementById('btn-next');
+      (el.disabled ? document.getElementById('btn-prev') : el).focus();
+    } else document.getElementById('btn-prev').focus();
+  };
+  const histoFirst = () => { if (SudokuMémo.length > 4) { histoIdx = 4; rebuildGrid(SudokuMémo[histoIdx]); updateHistoBtns(); document.getElementById('btn-next').focus(); } };
+  const histoLast  = () => { if (SudokuMémo.length > 4) { histoIdx = SudokuMémo.length - 1; rebuildGrid(SudokuMémo[histoIdx]); updateHistoBtns(); document.getElementById('btn-prev').focus(); } };
+
+  document.getElementById('btn-prev').addEventListener('click', histoPrev);
+  document.getElementById('btn-next').addEventListener('click', histoNext);
+
+  // Raccourcis clavier sur btn-prev / btn-next (flèches + AZERTY)
+  const histoKeydown = (e) => {
+    const k = e.key;
+    if      (k === 'ArrowLeft'  || k === 'g' || k === 'G' || k === 'v' || k === 'V') { e.preventDefault(); histoPrev(); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D' || k === 'j' || k === 'J' || k === 'n' || k === 'N') { e.preventDefault(); histoNext(); }
+    else if (k === 'ArrowUp'    || k === 'h' || k === 'H') { e.preventDefault(); histoFirst(); }
+    else if (k === 'ArrowDown'  || k === 'b' || k === 'B') { e.preventDefault(); histoLast();  }
+  };
+  document.getElementById('btn-prev').addEventListener('keydown', histoKeydown);
+  document.getElementById('btn-next').addEventListener('keydown', histoKeydown);
+
+  // Reset cache + historique
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (!confirm('Vider le cache et l\u2019historique ? Le sudoku initial sera restaur\u00e9.')) return;
+    localStorage.removeItem('plutoku-current');
+    SudokuMémo = [jsvd(), adini(), adini(), adini(), adini()];
+    histoIdx = 4;
+    rebuildGrid(SudokuMémo[1], { persist: false });
+    updateHistoBtns();
+  });
+}
+
+// ── Bascule dark/light mode ───────────────────────────────────────────
+function initDarkMode() {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const applyDark = (dark) => {
+    document.body.classList.toggle('dark', dark);
+    document.getElementById('BN').textContent = dark ? '😉' : '😎';
+  };
+  applyDark(mq.matches);
+  mq.addEventListener('change', e => applyDark(e.matches));
+  document.getElementById('BN').addEventListener('click', () => {
+    applyDark(!document.body.classList.contains('dark'));
+  });
+}
+
+// ── Export code / tableur ─────────────────────────────────────────────────
+function initExport() {
+  document.getElementById('clégén').addEventListener('click', () => {
+    const data = JSON.parse(gridTable?.getAttribute('sudata') || 'null');
+    if (!data) return;
+    const code = `vs([${data.map(row => row.join(' ')).join('; ')}])`;
+    const input = document.getElementById('code-display');
+    const pasteInput = document.getElementById('paste-input');
+    input.value = code;
+    pasteInput.value = code;
+    navigator.clipboard?.writeText(code).catch(() => {});
+    input.select();
+  });
+  document.getElementById('btn-excel').addEventListener('click', () => {
+    const data = JSON.parse(gridTable?.getAttribute('sudata') || 'null');
+    if (!data) return;
+    const tsv = Array.from({length:9}, (_, r) =>
+      Array.from({length:9}, (_, c) => data[r][c] || '').join('\t')
+    ).join('\n');
+    navigator.clipboard?.writeText(tsv).catch(() => {});
+    const input = document.getElementById('code-display');
+    const pasteInput = document.getElementById('paste-input');
+    input.value = '(→ copie tableur dans presse-papier)';
+    const code = `vs([${data.map(row => row.join(' ')).join(';')}])`;
+    pasteInput.value = code;
+  });
+}
+
+// ── Import par collage + nouveau sudoku ─────────────────────────────────────
+function initImport() {
+  const syncDifficultySlider = (emptyCount) => {
+    const slider = document.getElementById('rng-difficulte');
+    const min = parseInt(slider?.min ?? '0', 10);
+    const max = parseInt(slider?.max ?? '81', 10);
+    const safeMin = Number.isInteger(min) ? min : 0;
+    const safeMax = Number.isInteger(max) ? max : 81;
+    const v = Number.isInteger(emptyCount) ? emptyCount : parseInt(emptyCount, 10);
+    const safeVal = Number.isInteger(v) ? v : safeMin;
+    slider.value = String(Math.max(safeMin, Math.min(safeMax, safeVal)));
+  };
+
+  const countEmptyCells = (jsu) => jsu.reduce((acc, row) => acc + row.filter(v => v === 0).length, 0);
+  const updateDifficultyLabel = (emptyCount, context = '(création aléatoire)') => { // '☐ (création sudoku aléatoire)'
+    document.getElementById('lbl-difficulte').textContent = `${emptyCount} cases vides ${context}`;
+  };
+
+  const clampInt = (v, min, max) => Math.max(min, Math.min(max, v));
+  const parseShiftInput = (id) => {
+    const raw = parseInt(document.getElementById(id)?.value ?? '0', 10);
+    return Number.isInteger(raw) ? raw : 0;
+  };
+  const getImportShiftOpts = () => ({
+    shiftCols: !!document.getElementById('import-shift-cols')?.checked,
+    shiftRows: !!document.getElementById('import-shift-rows')?.checked,
+    colShift: parseShiftInput('import-shift-cols-count'),
+    rowShift: parseShiftInput('import-shift-rows-count')
+  });
+
+  // Parse un fragment tableur (TSV) et le place dans une grille 9×9.
+  // - sans décalage: aligné à gauche
+  // - avec décalage: aligné à droite (colonnes manquantes à gauche)
+  const parseExcelFragment = (text, opts) => {
+    if (!text.includes('\t')) return null;
+    const lines = text.replace(/\r\n?/g, '\n').split('\n');
+    while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+    while (lines.length > 0 && lines[0] === '') lines.shift();
+    if (!lines.length) return null;
+
+    const rows = lines.slice(0, 9).map((line) => line.split('\t'));
+    const widthRaw = rows.reduce((m, r) => Math.max(m, r.length), 0);
+    const height = rows.length;
+    const width = Math.min(9, widthRaw);
+    if (width <= 0 || height <= 0) return null;
+
+    const jsu = Array.from({ length: 9 }, () => Array(9).fill(0));
+    const maxColShift = 9 - width;
+    const maxRowShift = 9 - height;
+    const colStart = opts.shiftCols ? clampInt(opts.colShift, 0, maxColShift) : 0;
+    const rowStart = opts.shiftRows ? clampInt(opts.rowShift, 0, maxRowShift) : 0;
+
+    for (let r = 0; r < height; r++) {
+      const cells = rows[r] || [];
+      const srcStart = opts.shiftCols && cells.length > width ? (cells.length - width) : 0;
+      for (let c = 0; c < width; c++) {
+        const raw = (cells[srcStart + c] ?? '').trim();
+        const n = parseInt(raw, 10);
+        jsu[rowStart + r][colStart + c] = (n >= 1 && n <= 9) ? n : 0;
+      }
+    }
+    return { jsu, width, height, colStart, rowStart, shiftCols: opts.shiftCols, shiftRows: opts.shiftRows };
+  };
+
+  // Cherche récursivement un tableau 9×9 de nombres dans une structure JSON
+  const find9x9 = (arr) => {
+    if (!Array.isArray(arr)) return null;
+    if (arr.length === 9 && arr.every(c => Array.isArray(c) && c.length === 9 && c.every(v => typeof v === 'number')))
+      return arr; // JSudoku col-major trouvé
+    for (const item of arr) { const r = find9x9(item); if (r) return r; }
+    return null;
+  };
+  const loadFromText = (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return false;
+    let jsu = null;
+    let excelMeta = null;
+    // 1. Format JSON / vs([[...]]) / [[...]]
+    const bm = trimmed.match(/\[[\s\S]*\]/);
+    if (bm) { try { jsu = find9x9(JSON.parse(bm[0])); } catch {} }
+    // 1b. Format Julia matrix : nom([r1; r2; ...; r9]) ou juste [r1; r2; ...; r9]
+    if (!jsu) {
+      const jm = trimmed.match(/\[\s*([\d\s;]+)\]/);
+      if (jm) {
+        const rows = jm[1].split(';').map(r => r.trim().split(/\s+/).map(Number));
+        if (rows.length === 9 && rows.every(r => r.length === 9 && r.every(v => !isNaN(v))))
+          jsu = rows; // rows[i] = jsu[i] directement (même format que adini)
+      }
+    }
+    // 2. Format tableur Excel/TSV (complet ou fragment partiel)
+    if (!jsu) {
+      excelMeta = parseExcelFragment(text, getImportShiftOpts());
+      if (excelMeta) jsu = excelMeta.jsu;
+    }
+    // 3. Fallback texte libre / 81 chiffres
+    if (!jsu && /[1-9]/.test(trimmed)) jsu = mjs(tousudoku(text));
+    // Validation structure : tableau 9×9, valeurs 0–9
+    const isValidJsu = (m) =>
+      Array.isArray(m) && m.length === 9 &&
+      m.every(row => Array.isArray(row) && row.length === 9 &&
+        row.every(v => Number.isInteger(v) && v >= 0 && v <= 9));
+    if (!isValidJsu(jsu)) {
+      setStats('error', 'Format non reconnu');
+      return false;
+    }
+    vieuxSudoku(jsu);
+    histoIdx = SudokuMémo.length - 1;
+    rebuildGrid(jsu);
+    updateHistoBtns();
+    const emptyCount = countEmptyCells(jsu);
+    syncDifficultySlider(emptyCount);
+    updateDifficultyLabel(emptyCount, '(création aléatoire)'); // (import)
+    if (excelMeta) {
+      setStats('success', `Import tableur partiel ${excelMeta.height}×${excelMeta.width} (colonnes +${excelMeta.colStart}, lignes +${excelMeta.rowStart})`);
+    }
+    document.getElementById('paste-input').value = '';
+    return true;
+  };
+  document.getElementById('btn-coller').addEventListener('click', () => {
+    loadFromText(document.getElementById('paste-input').value);
+  });
+  document.getElementById('paste-input').addEventListener('paste', (e) => {
+    const text = e.clipboardData?.getData('text') ?? '';
+    e.preventDefault();
+    loadFromText(text || e.target.value);
+  });
+  // Ctrl+V n'importe où sur la page (hors champ Bonus qui gère lui-même)
+  document.addEventListener('paste', (e) => {
+    if (e.target.id === 'paste-input') return;
+    const text = e.clipboardData?.getData('text') ?? '';
+    if (text.trim().length === 0) return;
+    if (loadFromText(text) !== false) e.preventDefault();
+  });
+
+  // Nouveau sudoku + difficulté
+  document.getElementById('rng-difficulte').addEventListener('input', (e) => {
+    updateDifficultyLabel(e.target.value, '(pour création aléatoire)'); // quand on bouge le slider
+  });
+  document.getElementById('btn-nouveau').addEventListener('click', () => {
+    const nb = +document.getElementById('rng-difficulte').value;
+    const jsu = vieuxSudoku(nb);
+    histoIdx = SudokuMémo.length - 1;
+    rebuildGrid(jsu);
+    updateHistoBtns();
+    updateDifficultyLabel(nb, '(création aléatoire)'); // si sudoku aléatoire lancé
+  });
+}
+
+// ── Initialisation ─────────────────────────────────────────────────────────────
+function initApp() {
+  initHistorique();              // localStorage + histoIdx + nav ←/→ + snap + reset
+
+  // 1. Grille initiale
+  const iniContainer = document.getElementById('ini-container');
+  gridTable = makesudiniReactive(createsudini(SudokuMémo[1]));
+  iniContainer.appendChild(gridTable);
+
+  // 2. Va-et-vient
+  initVaetVient();
+
+  // 3. Résoudre à chaque changement de la grille
+  attachGridListener(gridTable);
+
+  // 4. Radio ModifierInit : vider ou retour instantané
+  document.querySelectorAll('input[name="ModifierInit"]').forEach(el => {
+    el.addEventListener('change', () => {
+      if (el.value === 'Vider le sudoku initial') rebuildGrid(SudokuMémo[0]);
+      else rebuildGrid();
+    });
+  });
+
+  // 6. Radios d’affichage
+  document.querySelectorAll('input[name="voirOuPas"], input[name="propalOuSoluce"]').forEach(el => {
+    el.addEventListener('change', () => { refresh(); });
+  });
+
+  initExport();     // 7 + 7b. Copier code / tableur
+  initDarkMode();   // 8. Bascule dark/light
+  initImport();     // 9 + 10. Collage + Nouveau sudoku
+
+  // Résoudre le sudoku initial dès le chargement
+  const initData = JSON.parse(gridTable.getAttribute('sudata') || 'null');
+  if (initData) {
+    SudokuMémo[2] = initData;
+    currentSolution = résoutSudoku(initData);
+    const [, stats] = currentSolution;
+    setStats('info', typeof stats === 'string' ? stats : '');
+  }
+  refresh();
+  updateHistoBtns();
+}
+
+// ── Reconstruire la grille initiale ──────────────────────────────────────────
+function rebuildGrid(jsuToLoad = SudokuMémo[1], { persist = true } = {}) {
+  const iniContainer = document.getElementById('ini-container');
+  iniContainer.innerHTML = '';
+  gridTable = makesudiniReactive(createsudini(jsuToLoad));
+  iniContainer.appendChild(gridTable);
+  attachGridListener(gridTable);
+  // Résoudre seulement si la grille a des cases remplies (évite de bloquer sur une grille vide)
+  const initData = JSON.parse(gridTable.getAttribute('sudata') || 'null');
+  if (initData) SudokuMémo[2] = initData;
+  if (initData) {
+    SudokuMémo[2] = initData;
+    currentSolution = résoutSudoku(initData);
+    const [, stats] = currentSolution;
+    setStats('info', typeof stats === 'string' ? stats : '');
+    if (persist) persistCurrent(initData);
+  } else {
+    currentSolution = null;
+    setStats('info', '');
+  }
+  refresh();
+}
+// ── Mise à jour classes CSS radios + affichage (appel groupé) ─────────────────
+function refresh() { updateRadioClasses(); updateDisplay(); }
+// ── Mise à jour classes CSS radios ────────────────────────────────────────────
+function updateRadioClasses() {
+  const voirOuPas = document.querySelector('input[name="voirOuPas"]:checked')?.value ?? 'cachée';
+  const propal    = document.getElementById('PossiblesEtSolution');
+  const divers    = document.getElementById('divers');
+  const pucaroligne = document.getElementById('pucaroligne');
+
+  if (voirOuPas === 'cachée') {
+    propal?.classList.add('pasla');
+    divers?.classList.add('pasla');
+  } else {
+    propal?.classList.remove('pasla');
+    divers?.classList.remove('pasla');
+  }
+  if (voirOuPas === 'tout') {
+    pucaroligne?.classList.add('maistesou');
+  } else {
+    pucaroligne?.classList.remove('maistesou');
+  }
+  // "par total" → montrer choixàmettreenhaut, masquer pucaroligne
+  const posTotal = document.getElementById('pos-total')?.checked;
+  if (posTotal) {
+    document.getElementById('puchoixàmettreenhaut')?.classList.remove('maistesou');
+    pucaroligne?.classList.add('maistesou');
+  }
+}
+
+// ── Mise à jour du panneau résultat ───────────────────────────────────────────
+function updateDisplay() {
+  const container   = document.getElementById('result-container');
+  const voirOuPas   = document.querySelector('input[name="voirOuPas"]:checked')?.value ?? 'cachée';
+  const propalChoix = document.querySelector('input[name="propalOuSoluce"]:checked')?.value ?? 'chiffre';
+  container.innerHTML = '';
+
+  // Pas encore résolu (grille vide ou non modifiée) → résultat vide, sans message
+  if (!currentSolution) return;
+
+  // Résolu mais affiché caché → message avec indication
+  if (voirOuPas === 'cachée') {
+    const div = document.createElement('div');
+    div.id = 'helper';
+    const [sol] = currentSolution;
+    const chanceTxt = typeof sol !== 'string' ? 'Bonne chance !' : 'Malchance !';
+    div.innerHTML = `<h6 style="margin:0;">🤐 Caché pour le moment. ${chanceTxt}<br>
+      Cocher une option ci-dessus pour voir l'aide.</h6>`;
+    container.appendChild(div);
+    return;
+  }
+
+  const [sol] = currentSolution;
+  const bindJSudoku = JSON.parse(gridTable?.getAttribute('sudata') || 'null');
+  if (!bindJSudoku) return;
+
+  const toutVoir = voirOuPas === 'tout';
+  let resultEl;
+
+  if (propalChoix === 'solution') {
+    resultEl = sudfini(sol, bindJSudoku, toutVoir);
+  } else {
+    resultEl = sudpropal(bindJSudoku, sol, {
+      toutVoir,
+      parCase: propalChoix === 'case',
+      somme:   propalChoix === 'total'
+    });
+  }
+  container.appendChild(resultEl);
+}
+
+// ── Lancement ─────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', initApp);
+</script>
+
+</body>
+</html>
